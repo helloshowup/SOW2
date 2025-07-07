@@ -124,6 +124,49 @@ findings.
 6. Provide a lightweight endpoint to store yes/no feedback in SQLite.
 7. Document how to run the scheduler, worker, and overall environment setup.
 
+## Sprint 2: Proof of Concept Plan
+
+Sprint Goal: To deliver a functional proof of concept that automates scraping GitHub for brand mentions, evaluating them with OpenAI, and sending a summary email with feedback links.
+
+### Week 1: Core Feature Implementation
+Focus: OpenAI Evaluation & Email Module (Estimated 5-8 hours)
+
+- **Mon** Implement the `OpenAIEvaluator` class based on the provided code example.
+  - Integrate the `openai` Python library.
+  - Implement the `evaluate_text` method.
+- **Tue** Develop a secure method for managing the OpenAI API key.
+  - Use environment variables (`python-dotenv`) or a similar secrets management tool.
+  - Update the configuration in `app/config.py` to load the key.
+- **Wed** Implement the `EmailSender` class using the `smtplib` and `email` modules.
+  - Create a basic HTML template for the email body.
+  - Parameterize the template to accept the list of evaluated mentions.
+- **Thu** Refine the HTML email for better readability and presentation.
+  - Add basic styling (CSS) to the HTML for a professional look.
+- **Fri** Conduct initial tests of the `EmailSender` with a mock email service to ensure emails are sent and formatted correctly.
+
+Focus: Feedback Handling (Estimated 2-3 hours)
+
+- **Fri** Implement the FastAPI feedback endpoint (`/feedback`) in `app/routes.py`.
+  - Define the Pydantic model for the feedback data.
+  - Create the database model for storing feedback in a separate SQLite database.
+
+### Week 2: Integration, Testing & Finalization
+Focus: Integration & End-to-End Workflow (Estimated 6-10 hours)
+
+- **Mon** Integrate the `OpenAIEvaluator` and `EmailSender` into the main worker process in `app/worker.py`.
+  - The worker should now perform the full sequence: scrape -> evaluate -> send email.
+- **Tue** Connect the feedback endpoint to the main application and test the feedback loop.
+  - Ensure that clicking a link in the email triggers the endpoint and saves the feedback.
+- **Wed** Write unit tests for the new modules.
+  - Create `tests/test_openai_evaluator.py` with mock API calls.
+  - Create `tests/test_email_sender.py` to verify email construction.
+  - Create `tests/test_feedback_routes.py` to test the feedback endpoint.
+- **Thu** Perform comprehensive end-to-end testing of the entire system.
+  - Run the scheduled job and verify the workflow from start to finish.
+  - Check database entries, email content, and feedback logging.
+- **Fri** Code cleanup, documentation updates, and final review before sprint conclusion.
+  - Ensure the `README.md` reflects the final PoC state.
+  - Add comments where necessary to clarify complex logic.
 ## TODOs
 
 ### Branch `backend-infra`
