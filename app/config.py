@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     redis_url: str = "redis://localhost:6379/0"
     agent_run_interval_minutes: int = 10
+    brand_repo_path: str = "dev-research/brand_repo.yaml"
 
     class Config:
         env_file = ".env"
