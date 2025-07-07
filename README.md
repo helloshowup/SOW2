@@ -182,10 +182,10 @@ Focus: Integration & End-to-End Workflow (Estimated 6-10 hours)
 
 -### Branch `scraper-email`
 
-- [ ] Build scraping module (`scraper.py`) with retry logic to gather a short sample of the internet (about 10 minutes of crawling as described in `dev-research/research_workflow_doc.md`) for interesting content relevant to the brand. Use lateral thinking when choosing search terms from `dev-research/brand_repo.yaml`.
-- [ ] Load brand configuration from `dev-research/brand_repo.yaml`.
-- [ ] Construct `debonair` brand YAML for testing using the values in `dev-research/brand_repo.yaml`.
-- [ ] Implement evaluation module using the OpenAI API.
+- [x] Build scraping module (`scraper.py`) with retry logic to gather a short sample of the internet (about 10 minutes of crawling as described in `dev-research/research_workflow_doc.md`) for interesting content relevant to the brand. Use lateral thinking when choosing search terms from `dev-research/brand_repo.yaml`.
+- [x] Load brand configuration from `dev-research/brand_repo.yaml`.
+- [x] Construct `debonair` brand YAML for testing using the values in `dev-research/brand_repo.yaml` (`dev-research/debonair_brand.yaml`).
+- [x] Implement evaluation module using the OpenAI API (`app/openai_evaluator.py`).
 - [ ] Compose summary email and send via SMTP with feedback links.
 - [ ] Implement feedback receiver storing responses in SQLite.
 - [ ] Write unit tests for scraping and email modules.
