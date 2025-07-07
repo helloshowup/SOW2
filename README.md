@@ -13,6 +13,9 @@ A minimal backend setup for running an AI agent every 10 minutes, persisting res
 * [Workflow](#workflow)
 * [Running the Scheduler](#running-the-scheduler)
 * [Logging & Monitoring](#logging--monitoring)
+* [Sprint Plan]
+* [TODOs]
+Coding Practices
 * [License](#license)
 
 ## Tech Stack
@@ -98,6 +101,61 @@ CREATE TABLE agent_runs (
 * Structured logs via `structlog` (JSON output for ELK).
 * Log rotation: `logging.handlers.RotatingFileHandler`.
 * Optional: forward logs to Elasticsearch/Kibana.
+
+@@
+-* Optional: forward logs to Elasticsearch/Kibana.
+-
+-## License
+-
+-MIT © Your Organization
++* Optional: forward logs to Elasticsearch/Kibana.
++
++## Sprint Plan
++
++The first sprint focuses on delivering a minimal, self-hosted backend that runs
++the agent every 10 minutes, processes results, and emails the top findings. Key
++objectives include:
++
++1. Create a FastAPI application exposing `/run-agent` and schedule it with
++   APScheduler.
++2. Queue tasks in Redis, track runs in PostgreSQL, and process jobs in a worker.
++3. Scrape web content daily, evaluate it with the OpenAI API, and email the top
++   five results.
++4. Capture yes/no feedback via a lightweight endpoint and store it in SQLite.
++
++## TODOs
++
++- [ ] Initialize FastAPI project structure (`app/main.py`, `app/routes.py`).
++- [ ] Define SQLAlchemy models for `agent_runs`.
++- [ ] Implement Redis queue and worker script for agent tasks.
++- [ ] Build scraping module with retry logic.
++- [ ] Create evaluation module integrating OpenAI API.
++- [ ] Compose summary email and send via SMTP with feedback links.
++- [ ] Implement feedback receiver storing responses in SQLite.
++- [ ] Load brand configuration from `dev-research/brand_repo.yaml`.
++- [ ] Set up environment configuration loader and logging utilities.
++- [ ] Write basic unit tests for scraping and email modules.
++- [ ] Document how to run the scheduler and provide environment variables.
++
++## License
++
++MIT © Your Organization
+
+## **Coding Practices**
+
+### **Fail Fast**
+
+1. Validate configuration at startup  
+   Check that all required environment variables (database URL, Redis connection, email credentials) are present before the application does any work. If any are missing, exit immediately with a clear error message. This prevents confusing runtime failures and makes setup issues obvious.  
+2. Raise errors early  
+   Instead of silently continuing when a step fails—such as when the web scraper cannot reach a site—raise an exception and log the problem. The README already recommends structured logging with `structlog`, so capturing errors early ensures they appear in the logs.  
+3. Keep functions short and descriptive  
+   Break logic into small, well-named functions. Each should do one thing so that even a non-coder can read the names and understand what the program is trying to do.  
+4. Use clear, user-friendly logging  
+   Combine fail-fast checks with simple log messages that explain what to fix (“SMTP credentials missing” or “Redis not reachable”). Avoid overly technical jargon so that it’s easy to diagnose problems without digging into the code.  
+5. Document how to run and test  
+   Provide step-by-step instructions in the README for starting the scheduler and how to see logs when something goes wrong. This supports a non-coder who may need to troubleshoot issues.
+
 
 ## License
 
