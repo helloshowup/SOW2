@@ -6,18 +6,16 @@ A minimal backend setup for running an AI agent every 10 minutes, persisting res
 
 * [Tech Stack](#tech-stack)
 * [Prerequisites](#prerequisites)
-* [Setup](#setup)
 * [Configuration](#configuration)
 * [Architecture](#architecture)
 * [Data Model](#data-model)
 * [Workflow](#workflow)
 * [Running the Scheduler](#running-the-scheduler)
 * [Logging & Monitoring](#logging--monitoring)
-* [Sprint Plan]
-* [TODOs]
-Coding Practices
+* [Sprint Plan](#sprint-plan)
+* [TODOs](#todos)
+* [Coding Practices](#coding-practices)
 * [License](#license)
-
 ## Tech Stack
 
 * **Language & Framework:** Python 3.10 + FastAPI
@@ -102,44 +100,32 @@ CREATE TABLE agent_runs (
 * Log rotation: `logging.handlers.RotatingFileHandler`.
 * Optional: forward logs to Elasticsearch/Kibana.
 
-@@
--* Optional: forward logs to Elasticsearch/Kibana.
--
--## License
--
--MIT © Your Organization
-+* Optional: forward logs to Elasticsearch/Kibana.
-+
-+## Sprint Plan
-+
-+The first sprint focuses on delivering a minimal, self-hosted backend that runs
-+the agent every 10 minutes, processes results, and emails the top findings. Key
-+objectives include:
-+
-+1. Create a FastAPI application exposing `/run-agent` and schedule it with
-+   APScheduler.
-+2. Queue tasks in Redis, track runs in PostgreSQL, and process jobs in a worker.
-+3. Scrape web content daily, evaluate it with the OpenAI API, and email the top
-+   five results.
-+4. Capture yes/no feedback via a lightweight endpoint and store it in SQLite.
-+
-+## TODOs
-+
-+- [ ] Initialize FastAPI project structure (`app/main.py`, `app/routes.py`).
-+- [ ] Define SQLAlchemy models for `agent_runs`.
-+- [ ] Implement Redis queue and worker script for agent tasks.
-+- [ ] Build scraping module with retry logic.
-+- [ ] Create evaluation module integrating OpenAI API.
-+- [ ] Compose summary email and send via SMTP with feedback links.
-+- [ ] Implement feedback receiver storing responses in SQLite.
-+- [ ] Load brand configuration from `dev-research/brand_repo.yaml`.
-+- [ ] Set up environment configuration loader and logging utilities.
-+- [ ] Write basic unit tests for scraping and email modules.
-+- [ ] Document how to run the scheduler and provide environment variables.
-+
-+## License
-+
-+MIT © Your Organization
+## Sprint Plan
+
+The first sprint focuses on delivering a minimal, self-hosted backend that runs
+the agent every 10 minutes, processes results, and emails the top findings. Key
+objectives include:
+
+1. Create a FastAPI application exposing `/run-agent` and schedule it with
+   APScheduler.
+2. Queue tasks in Redis, track runs in PostgreSQL, and process jobs in a worker.
+3. Scrape web content daily, evaluate it with the OpenAI API, and email the top
+   five results.
+4. Capture yes/no feedback via a lightweight endpoint and store it in SQLite.
+
+## TODOs
+
+- [ ] Initialize FastAPI project structure (`app/main.py`, `app/routes.py`).
+- [ ] Define SQLAlchemy models for `agent_runs`.
+- [ ] Implement Redis queue and worker script for agent tasks.
+- [ ] Build scraping module with retry logic.
+- [ ] Create evaluation module integrating OpenAI API.
+- [ ] Compose summary email and send via SMTP with feedback links.
+- [ ] Implement feedback receiver storing responses in SQLite.
+- [ ] Load brand configuration from `dev-research/brand_repo.yaml`.
+- [ ] Set up environment configuration loader and logging utilities.
+- [ ] Write basic unit tests for scraping and email modules.
+- [ ] Document how to run the scheduler and provide environment variables.
 
 ## **Coding Practices**
 
