@@ -102,30 +102,44 @@ CREATE TABLE agent_runs (
 
 ## Sprint Plan
 
-The first sprint focuses on delivering a minimal, self-hosted backend that runs
-the agent every 10 minutes, processes results, and emails the top findings. Key
-objectives include:
+Following the guidance in `dev-research`, the first sprint will build a minimal
+backend using **FastAPI**, **SQLModel**, **APScheduler**, and **RQ**. The goal is
+to run the agent every 10 minutes, evaluate scraped content, and email the top
+findings.
 
-1. Create a FastAPI application exposing `/run-agent` and schedule it with
-   APScheduler.
-2. Queue tasks in Redis, track runs in PostgreSQL, and process jobs in a worker.
-3. Scrape web content daily, evaluate it with the OpenAI API, and email the top
+1. Set up the FastAPI project skeleton and define an `AgentRun` model with
+   SQLModel so tables are created automatically on startup.
+2. Load configuration from environment variables using `python-dotenv` and
+   enable structured logging via `structlog`.
+3. Expose a `/run-agent` endpoint and schedule it with APScheduler to enqueue
+   jobs in Redis through RQ.
+4. Implement an RQ worker that executes scraping and evaluation logic and
+   updates `AgentRun` records.
+5. Scrape targeted sites, evaluate content with the OpenAI API using brand
+   settings from `dev-research/brand_repo.yaml`, and email a summary of the top
    five results.
-4. Capture yes/no feedback via a lightweight endpoint and store it in SQLite.
+6. Provide a lightweight endpoint to store yes/no feedback in SQLite.
+7. Document how to run the scheduler, worker, and overall environment setup.
 
 ## TODOs
 
+### Branch `backend-infra`
+
 - [ ] Initialize FastAPI project structure (`app/main.py`, `app/routes.py`).
-- [ ] Define SQLAlchemy models for `agent_runs`.
-- [ ] Implement Redis queue and worker script for agent tasks.
-- [ ] Build scraping module with retry logic.
-- [ ] Create evaluation module integrating OpenAI API.
+- [ ] Define `AgentRun` model with SQLModel and auto-create tables.
+- [ ] Set up environment configuration loader (`python-dotenv`) and structured logging (`structlog`).
+- [ ] Configure Redis with RQ and create the worker scaffold.
+- [ ] Schedule `/run-agent` using APScheduler to enqueue jobs.
+- [ ] Document scheduler setup and required environment variables.
+
+### Branch `scraper-email`
+
+- [ ] Build scraping module (`scraper.py`) with retry logic.
+- [ ] Load brand configuration from `dev-research/brand_repo.yaml`.
+- [ ] Implement evaluation module using the OpenAI API.
 - [ ] Compose summary email and send via SMTP with feedback links.
 - [ ] Implement feedback receiver storing responses in SQLite.
-- [ ] Load brand configuration from `dev-research/brand_repo.yaml`.
-- [ ] Set up environment configuration loader and logging utilities.
-- [ ] Write basic unit tests for scraping and email modules.
-- [ ] Document how to run the scheduler and provide environment variables.
+- [ ] Write unit tests for scraping and email modules.
 
 ## **Coding Practices**
 
