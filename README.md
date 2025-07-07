@@ -128,6 +128,8 @@ findings.
 
 Sprint Goal: To deliver a functional proof of concept that automates scraping GitHub for brand mentions, evaluating them with OpenAI, and sending a summary email with feedback links.
 
+Throughout this sprint, refer to the curated links in the `dev-research` folder whenever they help accomplish Sprint 2 tasks. These external domains have been whitelisted in the Codex environment so the agent can open them if additional context is required.
+
 ### Week 1: Core Feature Implementation
 Focus: OpenAI Evaluation & Email Module (Estimated 5-8 hours)
 
@@ -199,8 +201,10 @@ Focus: Integration & End-to-End Workflow (Estimated 6-10 hours)
    Break logic into small, well-named functions. Each should do one thing so that even a non-coder can read the names and understand what the program is trying to do.  
 4. Use clear, user-friendly logging  
    Combine fail-fast checks with simple log messages that explain what to fix (“SMTP credentials missing” or “Redis not reachable”). Avoid overly technical jargon so that it’s easy to diagnose problems without digging into the code.  
-5. Document how to run and test  
+5. Document how to run and test
    Provide step-by-step instructions in the README for starting the scheduler and how to see logs when something goes wrong. This supports a non-coder who may need to troubleshoot issues.
+6. Consult dev-research links when relevant
+   The `dev-research` folder lists articles and repositories that demonstrate best practices. These sites have been whitelisted in the Codex environment, so reference them whenever they directly support Sprint 2 objectives.
 
 
 ## License
