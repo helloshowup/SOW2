@@ -34,6 +34,12 @@ A minimal backend setup for running an AI agent every 10 minutes, persisting res
 * Access to a PostgreSQL and Redis instance
 * SMTP credentials for email delivery
 
+Install Python dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
 ## Configuration
 
 All configuration values are read from environment variables. See `.env.example` for reference.
