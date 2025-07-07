@@ -87,7 +87,9 @@ CREATE TABLE agent_runs (
 
 ## Running the Scheduler
 
-* **APScheduler (in-app)**: configured in `scheduler.py`. Auto-start with the FastAPI app.
+* **APScheduler (in-app)**: runs inside the FastAPI application.
+  The scheduler is configured in `app/main.py` and triggers `/run-agent` every
+  ten minutes.
 * **Cron job** (alternative):
 
   ```cron
@@ -127,21 +129,21 @@ findings.
 
 ### Branch `backend-infra`
 
-- [ ] Initialize FastAPI project structure (`app/main.py`, `app/routes.py`).
+- [x] Initialize FastAPI project structure (`app/main.py`, `app/routes.py`).
 - [ ] Define `AgentRun` model with SQLModel and auto-create tables.
 - [ ] Set up environment configuration loader (`python-dotenv`) and structured logging (`structlog`).
 - [ ] Configure Redis with RQ and create the worker scaffold.
-- [ ] Schedule `/run-agent` using APScheduler to enqueue jobs.
+- [x] Schedule `/run-agent` using APScheduler to enqueue jobs.
 - [ ] Document scheduler setup and required environment variables.
 
 ### Branch `scraper-email`
 
-- [ ] Build scraping module (`scraper.py`) with retry logic.
-- [ ] Load brand configuration from `dev-research/brand_repo.yaml`.
-- [ ] Implement evaluation module using the OpenAI API.
-- [ ] Compose summary email and send via SMTP with feedback links.
-- [ ] Implement feedback receiver storing responses in SQLite.
-- [ ] Write unit tests for scraping and email modules.
+- [x] Build scraping module (`scraper.py`) with retry logic.
+- [x] Load brand configuration from `dev-research/brand_repo.yaml`.
+- [x] Implement evaluation module using the OpenAI API.
+- [x] Compose summary email and send via SMTP with feedback links.
+- [x] Implement feedback receiver storing responses in SQLite.
+- [x] Write unit tests for scraping and email modules.
 
 ## **Coding Practices**
 
