@@ -102,6 +102,8 @@ CREATE TABLE agent_runs (
 
 ## Sprint Plan
 
+Based on branch and current TO DO to review "Sprint Goals and Relevant Code Examples.md"
+
 Following the guidance in `dev-research`, the first sprint will build a minimal
 backend using **FastAPI**, **SQLModel**, **APScheduler**, and **RQ**. The goal is
 to run the agent every 10 minutes, evaluate scraped content, and email the top
