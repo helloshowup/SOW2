@@ -36,7 +36,7 @@ A minimal backend setup for running an AI agent every 10 minutes, persisting res
 
 ## Configuration
 
-All configuration values are read from environment variables. See `.env.example` for reference.
+All configuration values are read from environment variables. See `.env.example` for reference. Typical variables include `DATABASE_URL`, `LOG_LEVEL`, `REDIS_URL`, and `AGENT_RUN_INTERVAL_MINUTES` for the scheduler frequency.
 
 ## Architecture
 
@@ -87,7 +87,8 @@ CREATE TABLE agent_runs (
 
 ## Running the Scheduler
 
-* **APScheduler (in-app)**: configured in `scheduler.py`. Auto-start with the FastAPI app.
+The scheduler runs inside the FastAPI process using **APScheduler**. It is configured in `app/main.py` to call the `/run-agent` endpoint every `AGENT_RUN_INTERVAL_MINUTES` (default 10).
+
 * **Cron job** (alternative):
 
   ```cron
@@ -127,14 +128,14 @@ findings.
 
 ### Branch `backend-infra`
 
-- [ ] Initialize FastAPI project structure (`app/main.py`, `app/routes.py`).
-- [ ] Define `AgentRun` model with SQLModel and auto-create tables.
-- [ ] Set up environment configuration loader (`python-dotenv`) and structured logging (`structlog`).
-- [ ] Configure Redis with RQ and create the worker scaffold.
-- [ ] Schedule `/run-agent` using APScheduler to enqueue jobs.
-- [ ] Document scheduler setup and required environment variables.
+- [x] Initialize FastAPI project structure (`app/main.py`, `app/routes.py`).
+- [x] Define `AgentRun` model with SQLModel and auto-create tables.
+- [x] Set up environment configuration loader (`python-dotenv`) and structured logging (`structlog`).
+- [x] Configure Redis with RQ and create the worker scaffold.
+- [x] Schedule `/run-agent` using APScheduler to enqueue jobs.
+- [x] Document scheduler setup and required environment variables.
 
-### Branch `scraper-email`
+-### Branch `scraper-email`
 
 - [ ] Build scraping module (`scraper.py`) with retry logic.
 - [ ] Load brand configuration from `dev-research/brand_repo.yaml`.
