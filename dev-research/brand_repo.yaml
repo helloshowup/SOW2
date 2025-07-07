@@ -1,0 +1,272 @@
+---  
+# Brand Repository - Version 0.2  
+# Consolidated YAML for all brand definitions  
+brands:
+
+  - id: techcorp-solutions  
+    display_name: TechCorp Solutions  
+    tone:  
+      persona: Authoritative and innovative  
+      style_guide: Technical, forward-thinking, solution-oriented  
+    aliases: []  
+    banned_words: []  
+    keywords:  
+      core:  
+        - artificial intelligence  
+        - machine learning  
+        - digital transformation  
+      extended:  
+        - data science  
+        - cloud computing  
+        - automation  
+        - business intelligence  
+        - SaaS  
+        - enterprise software  
+    colours:  
+      primary: "#3366FF"  
+      secondary: "#222222"  
+    no_go_topics:  
+      - competitor criticism  
+      - political statements  
+      - unverified technology claims  
+    example_copy:  
+      headline: "Enterprise-grade AI solutions to future-proof your business transformation."  
+      tweet: "Powering the future of business with scalable AI solutions. #DigitalTransformation #MachineLearning"  
+    asset_urls:  
+      - brand/assets/techcorp_logo_horizontal.png  
+    embedding_id: null  
+
+  - id: "debonairs"  
+    display_name: "Debonairs Pizza"  
+    tone:  
+      persona: "Playful, culturally resonant, community-driven"  
+      style_guide: "Conversational, engaging, real-time relevance"  
+    aliases:  
+      - "On The Double"  
+      - "Real Deal"  
+      - "The Hungry Never Wait"  
+      - "Deb"  
+      - "extraordinary experience"  
+      - "Debonairs Deal"  
+    banned_words:  
+      - "cheap"  
+      - "bargain"  
+      - "discount"  
+      - "offer"  
+      - "promo"  
+      - "coupon"  
+      - "voucher"  
+      - "clearance"  
+      - "no-frills"  
+      - "budget"  
+    keywords:  
+      core:  
+        - "pizza"  
+        - "culture"  
+        - "engagement"  
+        - "experience"  
+        - "loyalty"  
+        - "flavour"  
+        - "sharing"  
+        - "community"  
+        - "satisfaction"  
+        - "heat"  
+      extended:  
+        - "interactive"  
+        - "real-time"  
+        - "storytelling"  
+        - "value"  
+        - "excitement"  
+        - "#TheHungryNeverWait"  
+        - "bold flavours"  
+        - "taste adventures"  
+        - "cheeky banter"  
+        - "conversation starter"  
+        - "late-night"  
+        - "mouthwatering"  
+        - "cheesy pizza"  
+        - "pizza night"  
+        - "pizza delivery"  
+        - "pizza lover"  
+        - "pizza time"  
+        - "pizza deal"  
+        - "fast food"  
+        - "takeout"  
+        - "takeaway"  
+        - "online order"  
+        - "pizza order"  
+        - "debonairs deal"  
+        - "real deal"  
+        - "on the double"  
+        - "small real deal"  
+        - "cheesypizza"  
+        - "pizzanight"  
+        - "pizzalover"  
+        - "orderonline"  
+        - "fastfoodfriday"  
+        - "deb"  
+        - "pza"  
+        - "cheesy"  
+        - "pizzas"  
+        - "fastfood"  
+        - "extraordinary experience"  
+        - "family meal"  
+        - "extraordinary"  
+        - "foodie"  
+        - "delivery"  
+        - "ordering"  
+        # Hashtag variations (without the # symbol)  
+        - "debonairsdeal"
+        - "orderpizzaonline"
+        # Exact matches for test cases  
+        - "best pizza in town"  
+        - "late night pizza"  
+        - "pizza delivery near me"  
+        - "order pizza online"  
+        - "fast food delivery"  
+        - "takeaway pizza"  
+        - "real deal pizza"  
+        - "family meal pizza"  
+        - "deb pizza"  
+        # More pizza-specific terms  
+        - "pizza"  
+        - "pizzeria"  
+        - "hot pizza"  
+        - "fresh pizza"  
+        - "pizza restaurant"  
+        - "pizza place"  
+        - "pizza shop"  
+        - "pizza joint"  
+        - "pizza special"  
+        - "pizza offer"  
+        - "pizza promotion"  
+        - "pizza meal"  
+      products:  
+        - "Small Real Deal"  
+        - "On The Double"  
+        - "Coke"  
+        - "Mega Meatlovers"  
+        - "Frango Cheesesteak"  
+        - "Chicken Streetwise"  
+        - "Classic Hand Tossed"  
+        - "Double Chocolate Mud"  
+        - "Cinnamon Roll"  
+    colours:  
+      primary: "#000000"  
+      secondary: "#FFFFFF"  
+    example_copy:  
+      tweet: "\"If you like something, you simply gotta have it twice.\" #OnTheDouble"  
+      headline: "Transform ordinary moments into extraordinary experiences."  
+      tagline: "Extraordinary value by balancing affordability and quality."  
+
+  - id: epson-sa-retail  
+    display_name: Epson SA Retail  
+    tone:  
+      persona: Professional, informative, innovative  
+      style_guide: Technical, reliable, eco-conscious  
+    aliases: []  
+    banned_words:  
+      - counterfeit  
+      - competitor names  
+    keywords:  
+      core:  
+        - printer  
+        - scanner  
+        - projector  
+      extended:  
+        - ink  
+        - technology  
+        - office equipment  
+        - digital printing  
+        - home office  
+        - eco-friendly technology  
+        - business solutions  
+    colours:  
+      primary: "#3E2B83"  
+      secondary: "#00B5E2"  
+    no_go_topics:  
+      - politics  
+      - religion  
+      - controversial social issues  
+      - competitor comparisons  
+      - counterfeit products  
+    example_copy:  
+      headline: "High-quality, sustainable printing solutions for your modern business needs."  
+      tweet: "Maximize productivity with our eco-friendly printing solutions designed for today's workspace. #BusinessTech #Sustainability"  
+    asset_urls:  
+      - brand/assets/epson_sa_logo.png  
+    embedding_id: null  
+
+  - id: play-room  
+    display_name: Play Room  
+    tone:  
+      persona: Playful, exciting, and engaging  
+      style_guide: Energetic, colorful, family-friendly  
+    aliases: []  
+    banned_words:  
+      - gambling  
+      - adult content  
+    keywords:  
+      core:  
+        - gaming  
+        - entertainment  
+        - family fun  
+      extended:  
+        - arcade  
+        - leisure  
+        - games  
+        - play area  
+        - entertainment center  
+        - family activities  
+        - interactive games  
+    colours:  
+      primary: "#FFC300"  
+      secondary: "#FF5733"  
+    no_go_topics:  
+      - politics  
+      - religion  
+      - gambling addiction  
+      - violent content  
+      - adult entertainment  
+    example_copy:  
+      headline: "Fun entertainment and exciting gaming experiences for the whole family."  
+      tweet: "Create unforgettable memories with endless fun for all ages at Play Room! #FamilyFun #Gaming"  
+    asset_urls:  
+      - brand/assets/play_room_logo.png  
+    embedding_id: null  
+
+  - id: lancewood-dairy  
+    display_name: Lancewood Dairy  
+    tone:  
+      persona: Warm, family-oriented, wholesome  
+      style_guide: Traditional, nurturing, quality-focused  
+    banned_words:  
+      - artificial  
+      - chemicals  
+    keywords:  
+      core:  
+        - dairy  
+        - cheese  
+        - cooking  
+      extended:  
+        - family meals  
+        - baking  
+        - recipes  
+        - cream  
+        - quality ingredients  
+        - healthy food  
+        - natural products  
+    colours:  
+      primary: "#008542"  
+      secondary: "#FFFFFF"  
+    no_go_topics:  
+      - politics  
+      - veganism debates  
+      - controversial farming practices  
+      - non-dairy alternatives  
+    example_copy:  
+      headline: "Quality dairy products made with love for your family's enjoyment."  
+      tweet: "From our farm to your table – experience the rich taste of our natural dairy products. #FamilyMeals #QualityIngredients"  
+    asset_urls:  
+      - brand/assets/lancewood_dairy_logo.png  
+    embedding_id: null  

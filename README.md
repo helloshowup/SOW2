@@ -1,6 +1,6 @@
 # AI Agent Workflow Backend
 
-A minimal backend setup for running an AI agent every 10 minutes, persisting results, and emailing the top five outcomes. Designed as a self‑hosted MVP on a single instance.
+A minimal backend setup for running an AI agent every 10 minutes, persisting results, and emailing the top five outcomes. Designed as a self‑hosted MVP on a single instance and should be demo by the Debonairs brand in \dev-research\brand_repo.yaml only
 
 ## Table of Contents
 
