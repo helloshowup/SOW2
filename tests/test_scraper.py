@@ -39,3 +39,13 @@ def test_simple_scraper_search_and_scrape(monkeypatch):
 
     text = s.scrape_page('http://example.com/1')
     assert text == 'Hello\nWorld'
+
+
+def test_simple_scraper_redirect_resolution(monkeypatch):
+    html = '<a class="result__a" href="/l/?uddg=http%3A%2F%2Fexample.com">Link</a>'
+    s = scraper.SimpleScraper()
+
+    monkeypatch.setattr(s, '_get', lambda url: html)
+
+    links = s.search('test', max_results=1)
+    assert links == ['http://example.com']
