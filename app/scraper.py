@@ -58,6 +58,10 @@ class SimpleScraper:
     def __init__(self) -> None:
         self.session = requests.Session()
 
+    def _get_domain(self, url: str) -> str:
+        """Return the network location (domain) for a URL."""
+        return urllib.parse.urlparse(url).netloc
+
     def _get(self, url: str) -> str:
         response = self.session.get(url, timeout=10)
         response.raise_for_status()
