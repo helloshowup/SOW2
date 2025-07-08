@@ -369,8 +369,8 @@ This epic covers the final but critical steps to transform the application from 
 - [x] ### Ensure the EmailSender initialization or send\_summary\_email signature can accommodate all these new data points.
 
 #### **2\. Update app/agent.py to Collect and Pass All Required Data**
-- [ ] ### **Data Collection:** Capture the exact brand\_system\_prompt, market\_system\_prompt, and user\_prompt used during execution. Collect search\_terms\_generated after each search tool usage. Implement mechanisms to count num\_search\_calls, record search\_times (timestamps), and collect all content\_summaries during the agent's run. Refine OpenAIEvaluator result processing to explicitly categorize links into on\_brand\_specific\_links and brand\_relevant\_links.
-- [ ] ### **Data Passing:** Modify the call to EmailSender().send\_summary\_email(...) to pass all the newly collected data (categorized links, prompt metadata, scraping activity) as arguments.
+- [x] ### **Data Collection:** Capture the exact brand\_system\_prompt, market\_system\_prompt, and user\_prompt used during execution. Collect search\_terms\_generated after each search tool usage. Implement mechanisms to count num\_search\_calls, record search\_times (timestamps), and collect all content\_summaries during the agent's run. Refine OpenAIEvaluator result processing to explicitly categorize links into on\_brand\_specific\_links and brand\_relevant\_links.
+- [x] ### **Data Passing:** Modify the call to EmailSender().send\_summary\_email(...) to pass all the newly collected data (categorized links, prompt metadata, scraping activity) as arguments.
 
 #### **3\. Update README.md (This File\!)**
 - [ ] ### Add a new section (e.g., "Email Summary Report Structure") describing the automated email's layout and content.
