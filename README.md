@@ -357,7 +357,7 @@ This epic covers the final but critical steps to transform the application from 
 
 ### Here's a breakdown of the tasks to achieve our sprint goal:
 
-#### **1\. Update app/email\_sender.py for New Email Template**
+#### **1\. Update app/email\_sender.py for New Email Template** template example: dev-research/example-email
 - [ ] ### Modify the send\_summary\_email method to construct the new email template.
 - [ ] ### The method should accept on\_brand\_specific\_links and brand\_relevant\_links as distinct parameters.
 - [ ] ### Format on\_brand\_specific\_links to include "Yes, it was helpful\! | No, it was not helpful." feedback options alongside each link.
