@@ -39,6 +39,8 @@ def load_search_config(config_path: str = "search_config.json") -> dict | None:
 def run_agent_logic(run_id: int, search_request: dict | None = None) -> None:
     """Execute the agent iteration synchronously for RQ."""
     log.info("Executing agent logic", run_id=run_id)
+    if search_request is None:
+        search_request = load_search_config() or None
     asyncio.run(run_agent_iteration(run_id, search_request))
 
 
