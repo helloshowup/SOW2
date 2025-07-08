@@ -1,15 +1,25 @@
 {
   "brand_health_queries": [
-    "review",
     "feedback",
-    "vs Competitor",
-    "best deals YourBrand"
+    "vs Competitor pizza",
+    "best deals pizza"
   ],
   "market_intelligence_queries": [
-    "trends 2025",
-    "emerging competitor ",
-    "new technology",
-    "impact of regulation"
+    "trends 2025 pizza",
+    "emerging competitor fast food south africa",
+    "new technology pizza",
+    "impact of regulation on pizza"
+  ],
+  "blacklisted_domains": [
+    "wikipedia.org",
+    "debonairspizza.co.za"
+  ],
+  "rotating_search_phrases": [
+    "latest news",
+    "breakthrough",
+    "analysis",
+    "can you believe it?",
+    "industry report",
+    "market analysis"
   ]
 }
-

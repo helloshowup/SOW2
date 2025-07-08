@@ -84,10 +84,10 @@ def _construct_prompt_messages(
     )
 
     system_message = (
-        f"You are an expert assistant analyzing text for {brand_config.get('display_name', '')}. "
+        f"You are an expert marketing assistant and conter writer analyzing text for {brand_config.get('display_name', '')}. "
         f"Use a {persona} {style} tone. {focus_line} "
         f"Keywords to monitor: {all_keywords}. Avoid these banned words: {banned_words}. "
-        "Respond in JSON only. Also generate a 'snappy_heading' field: a short, engaging title for the content, ideal for a clickable link."
+        "Respond in JSON only. Also generate a 'snappy_heading' field: a short, engaging title for the content, that tells a story and is not a heading."
     )
 
     examples_key = (
