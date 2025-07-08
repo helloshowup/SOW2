@@ -211,11 +211,11 @@ This epic covers all work required to ensure the data received from the OpenAI A
 * All fields are correctly typed and include descriptions.
 
 **TODOs:**
-* \[ \] **Create `AnalysisResult` Schema:** In `app/models.py`, define a new Pydantic `BaseModel` named `AnalysisResult`.  
-* \[ \] **Define Nested `SentimentAnalysis` Model:** Inside `app/models.py`, create a nested `SentimentAnalysis` model with fields for `overall_sentiment` (using `Literal`) and `score` (`float`).  
-* \[ \] **Define Nested `Entity` Model:** Inside `app/models.py`, create a nested `Entity` model with fields for `name` (`str`) and `type` (`str`).  
-* \[ \] **Assemble Final Schema:** The `AnalysisResult` model should include fields for `summary` (`str`), `sentiment` (`SentimentAnalysis`), and `entities` (`List[Entity]`).  
-* \[ \] **Add Docstrings:** Ensure all models and fields have clear, descriptive docstrings as recommended in the research.
+* [x] **Create `AnalysisResult` Schema:** In `app/models.py`, define a new Pydantic `BaseModel` named `AnalysisResult`.
+* [x] **Define Nested `SentimentAnalysis` Model:** Inside `app/models.py`, create a nested `SentimentAnalysis` model with fields for `overall_sentiment` (using `Literal`) and `score` (`float`).
+* [x] **Define Nested `Entity` Model:** Inside `app/models.py`, create a nested `Entity` model with fields for `name` (`str`) and `type` (`str`).
+* [x] **Assemble Final Schema:** The `AnalysisResult` model should include fields for `summary` (`str`), `sentiment` (`SentimentAnalysis`), and `entities` (`List[Entity]`).
+* [x] **Add Docstrings:** Ensure all models and fields have clear, descriptive docstrings as recommended in the research.
 
 ### **User Story 2: Enforce the Data Contract (Estimated Time: 1.5 hours)**
 
@@ -229,14 +229,14 @@ This epic covers all work required to ensure the data received from the OpenAI A
 
 **TODOs:**
 
-* \[ \] **Add Dependency:** Add `instructor` to the project's dependencies (e.g., in a `requirements.txt` file).  
-* \[ \] **Patch OpenAI Client:** In `app/openai_evaluator.py`, import `instructor` and refactor the client initialization to use `instructor.from_openai(OpenAI())`.  
-* \[ \] **Refactor `evaluate_content`:**  
+* [x] **Add Dependency:** Add `instructor` to the project's dependencies (e.g., in a `requirements.txt` file).
+* [x] **Patch OpenAI Client:** In `app/openai_evaluator.py`, import `instructor` and refactor the client initialization to use `instructor.from_openai(OpenAI())`.
+* [x] **Refactor `evaluate_content`:**
   * Remove the `try...except json.JSONDecodeError` block.  
   * Remove the `response_format={"type": "json_object"}` parameter, as `instructor` handles this.  
   * Add the `response_model=AnalysisResult` parameter to the `client.chat.completions.create` call.  
-  * Update the function's return type hint to `-> AnalysisResult`.  
-* \[ \] **Update Worker Logic:** In `app/worker.py`, modify the call to `evaluate_content` to handle the returned Pydantic object directly (e.g., using `result.model_dump_json()` if a JSON string is needed downstream).
+  * Update the function's return type hint to `-> AnalysisResult`.
+* [x] **Update Worker Logic:** In `app/worker.py`, modify the call to `evaluate_content` to handle the returned Pydantic object directly (e.g., using `result.model_dump_json()` if a JSON string is needed downstream).
 
 ### **User Story 3: Implement Intelligent Error Handling (Estimated Time: 30 minutes)**
 
@@ -248,9 +248,9 @@ This epic covers all work required to ensure the data received from the OpenAI A
 * A log message is generated when a retry occurs.
 
 **TODOs:**
-* \[ \] **Enable Automatic Retries:** In `app/openai_evaluator.py`, add the `max_retries=2` parameter to the `client.chat.completions.create` call.  
-* \[ \] **Add Logging:** Implement basic logging within `evaluate_content` to capture and report when `instructor` performs a retry, which can be useful for monitoring the LLM's consistency.  
-* \[ \] **(Stretch Goal) Implement Final Safety Net:** For maximum robustness, create the `repair_json_with_llm` function from the research document and add it as a final `except` block to handle cases where even retries fail.
+* [x] **Enable Automatic Retries:** In `app/openai_evaluator.py`, add the `max_retries=2` parameter to the `client.chat.completions.create` call.
+* [x] **Add Logging:** Implement basic logging within `evaluate_content` to capture and report when `instructor` performs a retry, which can be useful for monitoring the LLM's consistency.
+* [x] **(Stretch Goal) Implement Final Safety Net:** For maximum robustness, create the `repair_json_with_llm` function from the research document and add it as a final `except` block to handle cases where even retries fail.
 
 
 ## General TODOs
