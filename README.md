@@ -187,9 +187,9 @@ To-Do List:
 3. Create a Search Configuration Template
 - [x] Create a new template file named search\_config.json.example in the project's root directory.
 - [x] Populate it with a clear example structure, demonstrating how to define both brand\_health\_queries and market\_intelligence\_queries.
-4. Improve Email Summaries (app/email\_sender.py)  
-- [ ] Update the send\_summary\_email function to accept the consolidated results from both tasks.  
-- [ ] Re-format the email body to present the findings under two distinct, clear headings: Brand Health Report and Market Intelligence Briefing.  
+4. Improve Email Summaries (app/email\_sender.py)
+- [x] Update the send\_summary\_email function to accept the consolidated results from both tasks.
+- [x] Re-format the email body to present the findings under two distinct, clear headings: Brand Health Report and Market Intelligence Briefing.
 5. Update Project Documentation  
 - [ ] Revise the main project description to reflect its enhanced capabilities as a market intelligence tool.
 

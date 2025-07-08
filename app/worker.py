@@ -71,7 +71,8 @@ def run_agent_logic(run_id: int, search_request: dict | None = None) -> None:
 
     scraper = SimpleScraper()
 
-    evaluations: list[dict] = []
+    brand_evals: list[dict] = []
+    market_evals: list[dict] = []
 
     def crawl_and_evaluate(queries: list[str], task_type: str) -> None:
         pages = scraper.crawl(queries)
@@ -83,7 +84,10 @@ def run_agent_logic(run_id: int, search_request: dict | None = None) -> None:
             )
             if result:
                 result["url"] = page.get("url")
-                evaluations.append(result)
+                if task_type == "market_intelligence":
+                    market_evals.append(result)
+                else:
+                    brand_evals.append(result)
 
     if search_request:
         brand_queries = search_request.get("brand_health_queries") or []
@@ -109,16 +113,26 @@ def run_agent_logic(run_id: int, search_request: dict | None = None) -> None:
         if run:
             run.status = "completed"
             run.completed_at = datetime.utcnow()
-            run.result = {"evaluations": evaluations}
+            run.result = {
+                "brand_health": brand_evals,
+                "market_intelligence": market_evals,
+            }
             session.add(run)
             session.commit()
 
     # prepare simple summary for email
-    top_results = [
+    brand_top = [
         {"item": ev.get("summary", ev.get("url", "")), "score": 1.0}
-        for ev in evaluations[:5]
+        for ev in brand_evals[:5]
     ]
-    EmailSender().send_summary_email(top_results, run_id)
+    market_top = [
+        {"item": ev.get("summary", ev.get("url", "")), "score": 1.0}
+        for ev in market_evals[:5]
+    ]
+    EmailSender().send_summary_email(
+        {"brand_health": brand_top, "market_intelligence": market_top},
+        run_id,
+    )
 
 
 def run_worker() -> None:

@@ -40,9 +40,17 @@ def test_send_summary_email(monkeypatch):
         receiver_email="receiver@example.com",
     )
 
-    sender.send_summary_email([{"item": "Pizza", "score": 0.9}], run_id=1)
+    summary = {
+        "brand_health": [{"item": "Pizza", "score": 0.9}],
+        "market_intelligence": [{"item": "Burgers", "score": 0.8}],
+    }
+
+    sender.send_summary_email(summary, run_id=1)
 
     assert dummy.started
     assert dummy.logged_in == ("user", "pass")
     assert dummy.sent
     assert isinstance(dummy.sent_msg, MIMEMultipart)
+    body = dummy.sent_msg.as_string()
+    assert "Brand Health Report" in body
+    assert "Market Intelligence Briefing" in body
