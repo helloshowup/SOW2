@@ -182,3 +182,33 @@ class EmailSender:
 def send_summary_email(run_id: int, **kwargs) -> None:
     """Convenience wrapper for ``EmailSender``."""
     EmailSender().send_summary_email(run_id, **kwargs)
+
+
+def send_email(subject: str, body: str) -> None:
+    """Send a plain text email."""
+    sender = EmailSender()
+    if not all([
+        sender.smtp_server,
+        sender.username,
+        sender.password,
+        sender.sender_email,
+        sender.receiver_email,
+    ]):
+        log.error("Email configuration is incomplete. Skipping email sending.")
+        return
+
+    msg = MIMEMultipart()
+    msg["Subject"] = subject
+    msg["From"] = sender.sender_email
+    msg["To"] = sender.receiver_email
+    msg.attach(MIMEText(body, "plain"))
+
+    context = ssl.create_default_context()
+    try:
+        with smtplib.SMTP(sender.smtp_server, sender.smtp_port) as server:
+            server.starttls(context=context)
+            server.login(sender.username, sender.password)
+            server.send_message(msg)
+        log.info("Email sent", subject=subject, recipient=sender.receiver_email)
+    except Exception as e:  # pragma: no cover - network failures
+        log.error("Failed to send email", exc_info=e)

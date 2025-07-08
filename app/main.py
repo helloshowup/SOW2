@@ -1,5 +1,6 @@
 import logging
 import sys
+from datetime import datetime, timedelta
 
 from fastapi import FastAPI, Depends, HTTPException
 from redis import Redis
@@ -8,10 +9,12 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 import structlog
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
+from apscheduler.triggers.date import DateTrigger
 import httpx
 
 from .config import get_settings
 from .database import get_session, init_db
+from .daily_email_compiler import compile_and_send_daily_email
 
 from .routes import router as api_router
 from .models import AgentRun
@@ -61,6 +64,18 @@ async def on_startup() -> None:
         id="agent_run_scheduler",
         replace_existing=True,
         misfire_grace_time=60,
+    )
+    now = datetime.now()
+    if now.hour >= 18:
+        next_run_date = datetime(now.year, now.month, now.day, 18, 0, 0) + timedelta(days=1)
+    else:
+        next_run_date = datetime(now.year, now.month, now.day, 18, 0, 0)
+    scheduler.add_job(
+        compile_and_send_daily_email,
+        DateTrigger(run_date=next_run_date),
+        id="daily_email_job",
+        replace_existing=True,
+        misfire_grace_time=3600,
     )
     scheduler.start()
     structlog.get_logger().info(

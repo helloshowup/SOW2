@@ -10,6 +10,8 @@ from sqlalchemy import engine_from_config, pool
 
 from alembic import context
 from sqlmodel import SQLModel
+database_module = importlib.import_module("app.database")
+Base = database_module.Base
 
 spec = importlib.util.spec_from_file_location(
     "app.config", join(repo_root, "app", "config.py")
@@ -18,21 +20,18 @@ config_module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(config_module)
 get_settings = config_module.get_settings
 
-models_spec = importlib.util.spec_from_file_location(
-    "app.models", join(repo_root, "app", "models.py")
-)
-models_module = importlib.util.module_from_spec(models_spec)
-models_spec.loader.exec_module(models_module)
+models_module = importlib.import_module("app.models")
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
 settings = get_settings()
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+database_url = settings.DATABASE_URL.replace("+aiosqlite", "").replace("+asyncpg", "")
+config.set_main_option("sqlalchemy.url", database_url)
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-target_metadata = SQLModel.metadata
+target_metadata = [SQLModel.metadata, Base.metadata]
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode."""
