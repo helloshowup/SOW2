@@ -211,12 +211,12 @@ To-Do List:
 - [x] Implement EmailSender class with HTML template and styling.
 - [x] Add /feedback endpoint and SQLite model.
 - [x] Integrate Scraper and Evaluator into the Worker: The main task remaining is to integrate the SimpleScraper and evaluate_content function into the app/worker.py's run_agent_logic function. The current run_agent_logic is a placeholder and needs to be updated to perform the actual scraping and evaluation.
-- [ ] Create a docker-compose.yml file: This is the most critical missing piece. The file must define the api, worker, db, and redis services, their builds, environments, and dependencies.
+- [x] Create a docker-compose.yml file: This is the most critical missing piece. The file must define the api, worker, db, and redis services, their builds, environments, and dependencies.
 - [x] Unit tests for evaluator, feedback routes, and end-to-end workflow.
-- [ ] verify Email Content: The send_summary_email function in app/email_sender.py currently sends a generic list of results. This should be updated to use the actual evaluated content from the OpenAI evaluator.
-- [ ] Create a docker-compose.yml file: This is the most critical missing piece. The file must define the api, worker, db, and redis services, their builds, environments, and dependencies.
-- [ ] Create an .env.example template file: Create a template file that lists all the necessary environment variables but with placeholder values. This provides a clear guide for others on how to create their own .env file.Variables to include: POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB, OPENAI_API_KEY, and all MAIL_* settings.
-- [ ] write sample Dockerfile for local launch
+- [x] verify Email Content: The send_summary_email function in app/email_sender.py currently sends a generic list of results. This should be updated to use the actual evaluated content from the OpenAI evaluator.
+- [x] Create a docker-compose.yml file: This is the most critical missing piece. The file must define the api, worker, db, and redis services, their builds, environments, and dependencies.
+- [x] Create an .env.example template file: Create a template file that lists all the necessary environment variables but with placeholder values. This provides a clear guide for others on how to create their own .env file.Variables to include: POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB, OPENAI_API_KEY, and all MAIL_* settings.
+- [x] write sample Dockerfile for local launch
 - [x] Create a file named smoke_test.sh in your project's root directory as based on dev-research\smoke-test-suggestion.txt
 - [ ] Documentation updates and final cleanup.
 
