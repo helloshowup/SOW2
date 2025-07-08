@@ -4,27 +4,23 @@ import sys
 from fastapi import FastAPI, Depends, HTTPException
 from redis import Redis
 from rq import Queue
-from sqlmodel import SQLModel, Session, create_engine
+from sqlmodel import Session
 import structlog
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 import httpx
 
 from .config import get_settings
+from .database import get_session, init_db
 
 from .routes import router as api_router
 from .models import AgentRun
 
 settings = get_settings()
 
-DATABASE_URL = settings.database_url
-engine = create_engine(DATABASE_URL, echo=True)
 redis_conn = Redis.from_url(settings.redis_url)
 task_queue = Queue(connection=redis_conn)
 scheduler = AsyncIOScheduler()
-
-def create_db_and_tables() -> None:
-    SQLModel.metadata.create_all(engine)
 
 def setup_logging() -> None:
     logging.basicConfig(
@@ -39,10 +35,6 @@ def setup_logging() -> None:
         ],
         wrapper_class=structlog.make_filtering_bound_logger(logging.getLevelName(settings.log_level)),
     )
-
-def get_session():
-    with Session(engine) as session:
-        yield session
 
 app = FastAPI(title="AI Agent Backend")
 
@@ -62,7 +54,7 @@ async def trigger_run_agent() -> None:
 async def on_startup() -> None:
     """Initialize database and scheduler on startup."""
     setup_logging()
-    create_db_and_tables()
+    init_db()
     scheduler.add_job(
         trigger_run_agent,
         IntervalTrigger(minutes=settings.agent_run_interval_minutes),

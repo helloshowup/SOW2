@@ -14,3 +14,12 @@ class AgentRun(SQLModel, table=True):
     status: str
     result: Optional[dict] = Field(default=None, sa_column=Column(JSONB))
     error_message: Optional[str] = None
+
+
+class Feedback(SQLModel, table=True):
+    """User feedback linked to an AgentRun."""
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    run_id: int = Field(foreign_key="agentrun.id")
+    value: str
+    submitted_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
