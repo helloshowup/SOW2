@@ -2,9 +2,9 @@ from typing import Any, Dict, Optional, List
 
 import instructor
 from openai import AsyncOpenAI
-from functools import lru_cache
 import json
 import asyncio
+from collections import OrderedDict
 from instructor.client import HookName
 import structlog
 
@@ -40,24 +40,27 @@ def alru_cache(maxsize: int = 128):
     """A lightweight async-aware LRU cache decorator."""
 
     def decorator(func):
-        def sync_call(text: str, brand_json: str, task_type: str, create_id: int):
-            brand_cfg = json.loads(brand_json)
-            return asyncio.run(func(text, brand_cfg, task_type))
-
-        cached_sync = lru_cache(maxsize=maxsize)(sync_call)
+        cache: "OrderedDict[str, Any]" = OrderedDict()
+        lock = asyncio.Lock()
 
         async def wrapper(text: str, brand_config: Dict[str, Any], task_type: str = "brand_health"):
-            key = json.dumps(brand_config, sort_keys=True)
-            create_id = id(client.chat.completions.create)
-            hits_before = cached_sync.cache_info().hits
-            loop = asyncio.get_running_loop()
-            result = await loop.run_in_executor(None, cached_sync, text, key, task_type, create_id)
-            if cached_sync.cache_info().hits > hits_before:
-                log.info("Cache hit for evaluate_content")
+            base = {"t": text, "b": brand_config, "tt": task_type, "cid": id(client.chat.completions.create)}
+            key = json.dumps(base, sort_keys=True)
+            async with lock:
+                if key in cache:
+                    cache.move_to_end(key)
+                    log.info("Cache hit for evaluate_content")
+                    return cache[key]
+
+            result = await func(text, brand_config, task_type)
+
+            async with lock:
+                cache[key] = result
+                cache.move_to_end(key)
+                if len(cache) > maxsize:
+                    cache.popitem(last=False)
             return result
 
-        wrapper.cache_info = cached_sync.cache_info
-        wrapper.cache_clear = cached_sync.cache_clear
         return wrapper
 
     return decorator

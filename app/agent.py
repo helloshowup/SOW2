@@ -2,7 +2,7 @@ import asyncio
 import os
 import random
 from datetime import datetime, date
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Iterable
 from urllib.parse import urlparse
 
 import structlog
@@ -20,17 +20,35 @@ from .models import AgentRun, VisitedUrl, EvaluatedSnippet
 
 log = structlog.get_logger()
 
-async def _process_batch(pages: List[Dict[str, Any]], brand_config: Dict[str, Any], task_type: str) -> List[Dict[str, Any]]:
+# limit concurrent OpenAI evaluations
+MAX_CONCURRENT_EVALUATIONS = 10
+# limit number of pages processed per batch
+MAX_BATCH_SIZE = 20
+
+
+def _chunked(seq: List[Dict[str, Any]], size: int) -> Iterable[List[Dict[str, Any]]]:
+    """Yield successive ``size``-sized chunks from ``seq``."""
+    for i in range(0, len(seq), size):
+        yield seq[i : i + size]
+
+async def _process_batch(
+    pages: List[Dict[str, Any]], brand_config: Dict[str, Any], task_type: str
+) -> List[Dict[str, Any]]:
     from . import worker  # allows monkeypatching evaluate_content in tests
+
+    semaphore = asyncio.BoundedSemaphore(MAX_CONCURRENT_EVALUATIONS)
+
+    async def evaluate_with_semaphore(snippet: str):
+        async with semaphore:
+            return await worker.evaluate_content(snippet, brand_config, task_type)
 
     tasks = []
     valid_pages = []
     for page in pages:
         if page.get("snippet"):
             valid_pages.append(page)
-            tasks.append(
-                worker.evaluate_content(page["snippet"], brand_config, task_type)
-            )
+            tasks.append(evaluate_with_semaphore(page["snippet"]))
+
     results = await asyncio.gather(*tasks)
     processed: List[Dict[str, Any]] = []
     for page, res in zip(valid_pages, results):
@@ -209,10 +227,17 @@ async def run_agent_iteration(run_id: int, search_request: dict | None = None) -
     
             brand_evals: List[Dict[str, Any]] = []
             market_evals: List[Dict[str, Any]] = []
+
             if brand_pages:
-                brand_evals = await _process_batch(brand_pages, brand_config, "brand_health")
+                for chunk in _chunked(brand_pages, MAX_BATCH_SIZE):
+                    brand_evals.extend(
+                        await _process_batch(chunk, brand_config, "brand_health")
+                    )
             if market_pages:
-                market_evals = await _process_batch(market_pages, brand_config, "market_intelligence")
+                for chunk in _chunked(market_pages, MAX_BATCH_SIZE):
+                    market_evals.extend(
+                        await _process_batch(chunk, brand_config, "market_intelligence")
+                    )
 
             # Persist evaluated snippets
             try:
