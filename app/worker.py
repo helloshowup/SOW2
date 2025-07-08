@@ -4,6 +4,7 @@ from rq import Worker, Queue
 import asyncio
 import json
 import logging
+import os
 
 from .config import get_settings
 from .database import engine
@@ -20,27 +21,32 @@ logging.basicConfig(
 log = structlog.get_logger()
 
 
-def load_search_config(config_path: str = "search_config.json") -> dict | None:
-    """Load search configuration from a JSON file."""
-    try:
-        with open(config_path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except FileNotFoundError:
-        logging.error(
-            "Configuration file not found at %s. Please create it.", config_path
-        )
-    except json.JSONDecodeError:
-        logging.error(
-            "Error decoding JSON from %s. Please check its format.", config_path
-        )
-    return None
+def load_search_config(config_path: str = "search_config.json") -> dict:
+    """Load search configuration from a JSON file in the project root."""
+    search_request_data: dict = {}
+    full_path = os.path.join(os.getcwd(), config_path)
+    if os.path.exists(full_path):
+        try:
+            with open(full_path, "r", encoding="utf-8") as f:
+                search_request_data = json.load(f)
+        except FileNotFoundError:
+            logging.error(
+                "Configuration file not found at %s. Please create it.", full_path
+            )
+        except json.JSONDecodeError:
+            logging.error(
+                "Error decoding JSON from %s. Please check its format.", full_path
+            )
+    else:
+        logging.info("search_config.json not found at %s", full_path)
+    return search_request_data
 
 
 def run_agent_logic(run_id: int, search_request: dict | None = None) -> None:
     """Execute the agent iteration synchronously for RQ."""
     log.info("Executing agent logic", run_id=run_id)
     if search_request is None:
-        search_request = load_search_config() or None
+        search_request = load_search_config()
     asyncio.run(run_agent_iteration(run_id, search_request))
 
 
