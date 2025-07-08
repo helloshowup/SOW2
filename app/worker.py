@@ -6,7 +6,7 @@ import os
 import json
 import logging
 from datetime import datetime
-from sqlmodel import Session
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from .config import get_settings
 from .email_sender import EmailSender
@@ -17,7 +17,7 @@ from .scraper import (
 )
 from .brand_parser import load_brand_config
 from .openai_evaluator import evaluate_content
-from .database import engine
+from .database import engine, async_session
 from .models import AgentRun
 import structlog
 
@@ -56,14 +56,19 @@ def run_agent_logic(run_id: int, search_request: dict | None = None) -> None:
     log.info("Executing agent logic", run_id=run_id)
 
     # mark run as running
-    with Session(engine) as session:
-        run = session.get(AgentRun, run_id)
-        if not run:
-            log.error("AgentRun not found", run_id=run_id)
-            return
-        run.status = "running"
-        session.add(run)
-        session.commit()
+    async def mark_running() -> bool:
+        async with async_session() as session:
+            run = await session.get(AgentRun, run_id)
+            if not run:
+                log.error("AgentRun not found", run_id=run_id)
+                return False
+            run.status = "running"
+            session.add(run)
+            await session.commit()
+            return True
+
+    if not asyncio.run(mark_running()):
+        return
 
     brand_id = os.getenv("BRAND_ID", "debonairs")
     brand_config = load_brand_config(brand_id) or {}
@@ -119,17 +124,20 @@ def run_agent_logic(run_id: int, search_request: dict | None = None) -> None:
         market_evals = asyncio.run(process_batch(market_pages, "market_intelligence"))
 
     # store completed results
-    with Session(engine) as session:
-        run = session.get(AgentRun, run_id)
-        if run:
-            run.status = "completed"
-            run.completed_at = datetime.utcnow()
-            run.result = {
-                "brand_health": brand_evals,
-                "market_intelligence": market_evals,
-            }
-            session.add(run)
-            session.commit()
+    async def mark_complete() -> None:
+        async with async_session() as session:
+            run = await session.get(AgentRun, run_id)
+            if run:
+                run.status = "completed"
+                run.completed_at = datetime.utcnow()
+                run.result = {
+                    "brand_health": brand_evals,
+                    "market_intelligence": market_evals,
+                }
+                session.add(run)
+                await session.commit()
+
+    asyncio.run(mark_complete())
 
     # prepare simple summary for email
     brand_top = [

@@ -5,7 +5,7 @@ WORKDIR /app
 COPY . /app
 
 RUN pip install --no-cache-dir \
-    fastapi uvicorn sqlmodel psycopg2-binary \
+    fastapi uvicorn sqlmodel psycopg[binary] \
     apscheduler httpx python-dotenv structlog \
     redis rq requests beautifulsoup4 openai pyyaml
 

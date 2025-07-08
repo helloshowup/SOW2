@@ -161,7 +161,7 @@ propcache==0.3.2
     # via
     #   aiohttp
     #   yarl
-psycopg2-binary==2.9.10
+psycopg[binary]==3.2.9
     # via -r requirements.in
 pydantic==2.11.7
     # via
@@ -213,6 +213,8 @@ redis==6.2.0
     # via
     #   -r requirements.in
     #   rq
+aiosqlite==0.21.0
+    # via -r requirements.in
 requests==2.32.4
     # via
     #   -r requirements.in
