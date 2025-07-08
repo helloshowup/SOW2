@@ -192,14 +192,13 @@ Focus: Integration & End-to-End Workflow (Estimated 6-10 hours)
 - [ ] Securely load OpenAI API key via app/config.py
 - [ ] Implement EmailSender class with HTML template and styling.
 - [ ] Add /feedback endpoint and SQLite model.
-- [ ] Integrate evaluator and email sender into app/worker.py.
+- [ ] Integrate Scraper and Evaluator into the Worker: The main task remaining is to integrate the SimpleScraper and evaluate_content function into the app/worker.py's run_agent_logic function. The current run_agent_logic is a placeholder and needs to be updated to perform the actual scraping and evaluation..
 - [ ] Unit tests for evaluator, feedback routes, and end-to-end workflow.
-- [ ] Documentation updates and final cleanup.
-- [ ] Integrate Scraper and Evaluator into the Worker: The main task remaining is to integrate the SimpleScraper and evaluate_content function into the app/worker.py's run_agent_logic function. The current run_agent_logic is a placeholder and needs to be updated to perform the actual scraping and evaluation.
 - [ ] verify Email Content: The send_summary_email function in app/email_sender.py currently sends a generic list of results. This should be updated to use the actual evaluated content from the OpenAI evaluator.
 - [ ] write sample Dockerfile for local launch
 - [ ] Create a file named smoke_test.sh in your project's root directory as based on dev-research\smoke-test-suggestion.txt
-- [ ] 
+- [ ] Documentation updates and final cleanup.
+
 ## **Coding Practices**
 
 ### **Fail Fast**
