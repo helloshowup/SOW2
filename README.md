@@ -252,35 +252,53 @@ This epic covers all work required to ensure the data received from the OpenAI A
 * \[ \] **Add Logging:** Implement basic logging within `evaluate_content` to capture and report when `instructor` performs a retry, which can be useful for monitoring the LLM's consistency.  
 * \[ \] **(Stretch Goal) Implement Final Safety Net:** For maximum robustness, create the `repair_json_with_llm` function from the research document and add it as a final `except` block to handle cases where even retries fail.
 
-Sprint Plan: Part II - Dynamic Context and Few-Shot Prompting
-Prerequisite: Completion of "Part I: Structured & Validated JSON Output" Sprint.
-Sprint Goal: To significantly improve the quality and relevance of the AI's analysis by engineering a dynamic prompting system. This system will use context-rich, few-shot examples tailored to the specific analysis task, moving from generic instructions to guided, expert-level reasoning.
-Timeline: 1.5 Hours
-Epic: Elevating Analytical Intelligence
+### Sprint Plan: Part II \- Dynamic Context and Few-Shot Prompting
+
+**Prerequisite:** Completion of "Part I: Structured & Validated JSON Output" Sprint.
+
+**Sprint Goal:** To significantly improve the quality and relevance of the AI's analysis by engineering a dynamic prompting system. This system will use context-rich, few-shot examples tailored to the specific analysis task, moving from generic instructions to guided, expert-level reasoning.
+
+**Timeline:** 1.5 Hours
+
+#### Epic: Elevating Analytical Intelligence
+
 This epic focuses on transforming the AI from a general-purpose text analyzer into a specialized, context-aware engine that understands the distinct nuances of "Brand Health" versus "Market Intelligence."
-User Story 1: Enrich the Configuration with Actionable Examples (Estimated Time: 45 minutes)
-As a developer, I want to augment the brand_repo.yaml file to include structured, task-specific examples, so that I can provide the AI with a clear, validated blueprint of the expected analysis for different scenarios.
-Acceptance Criteria:
-The brand_repo.yaml file contains new sections for task-specific examples.
-All examples are structured and their outputs validate against the AnalysisResult schema.
-TODOs:
-[ ] Update brand_repo.yaml Structure: Add two new top-level keys to dev-research/brand_repo.yaml: brand_health_examples and market_intel_examples.
-[ ] Populate Brand Health Examples: Under brand_health_examples, add 2-3 examples. Each example should have an input (a sample text about customer service, product quality, etc.) and an output (the ideal JSON analysis focusing on brand health metrics).
-[ ] Populate Market Intelligence Examples: Under market_intel_examples, add 2-3 examples. Each example should have an input (a sample text about a competitor's move, a new technology, etc.) and an output (the ideal JSON analysis focusing on market trends and opportunities).
-[ ] Crucial Validation Step: For each example you create, manually copy the output JSON and validate it against the AnalysisResult Pydantic model from Part I. This ensures the examples are perfectly aligned with the schema, preventing model confusion.
-User Story 2: Implement a Dynamic, Task-Aware Prompt Engine (Estimated Time: 45 minutes)
-As a developer, I want to dynamically construct a sophisticated prompt using the new few-shot examples, so that the AI's analysis is precisely and automatically tailored to the specific task (brand_health or market_intelligence).
-Acceptance Criteria:
-A new prompt-building function exists that assembles a multi-part message history.
-The evaluate_content function uses this new dynamic prompt.
-The final prompt sent to the API includes a system role, few-shot examples, and the user query.
-TODOs:
-[ ] Create Prompt Construction Logic: In app/openai_evaluator.py, create a new helper function, _construct_prompt_messages(task_type: str, brand_config: dict, user_input: str) -> list.
-[ ] Develop System Message Templates: Inside the new function, create two distinct system message strings: one for brand_health and one for market_intelligence. These messages should define the AI's expert persona for that task.
-[ ] Implement Example Injection: Write logic to select the correct list of examples (brand_health_examples or market_intel_examples) from the brand_config based on the task_type.
-[ ] Format Few-Shot Messages: Loop through the selected examples. For each example, append two messages to your list: one with role: "user" and content: example['input'], and another with role: "assistant" and content: example['output'].
-[ ] Assemble Final Message History: The _construct_prompt_messages function should return a complete list of messages, starting with the system message, followed by the alternating user/assistant examples, and ending with the final user message containing the user_input.
-[ ] Integrate into evaluate_content: Refactor the main evaluate_content function. Remove the old static prompt string and instead call your new _construct_prompt_messages helper. Pass the returned message list to the messages parameter of the client.chat.completions.create call.
+
+##### User Story 1: Enrich the Configuration with Actionable Examples (Estimated Time: 45 minutes)
+
+**As a developer,** I want to augment the `brand_repo.yaml` file to include structured, task-specific examples, **so that** I can provide the AI with a clear, validated blueprint of the expected analysis for different scenarios.
+
+**Acceptance Criteria:**
+
+* The `brand_repo.yaml` file contains new sections for task-specific examples.  
+* All examples are structured and their outputs validate against the `AnalysisResult` schema.
+
+**TODOs:**
+
+* \[ \] **Update `brand_repo.yaml` Structure:** Add two new top-level keys to `dev-research/brand_repo.yaml`: `brand_health_examples` and `market_intel_examples`.  
+* \[ \] **Populate Brand Health Examples:** Under `brand_health_examples`, add 2-3 examples. Each example should have an `input` (a sample text about customer service, product quality, etc.) and an `output` (the ideal JSON analysis focusing on brand health metrics).  
+* \[ \] **Populate Market Intelligence Examples:** Under `market_intel_examples`, add 2-3 examples. Each example should have an `input` (a sample text about a competitor's move, a new technology, etc.) and an `output` (the ideal JSON analysis focusing on market trends and opportunities).  
+* \[ \] **Crucial Validation Step:** For each example you create, manually copy the `output` JSON and validate it against the `AnalysisResult` Pydantic model from Part I. This ensures the examples are perfectly aligned with the schema, preventing model confusion.
+
+##### User Story 2: Implement a Dynamic, Task-Aware Prompt Engine (Estimated Time: 45 minutes)
+
+**As a developer,** I want to dynamically construct a sophisticated prompt using the new few-shot examples, **so that** the AI's analysis is precisely and automatically tailored to the specific task (`brand_health` or `market_intelligence`).
+
+**Acceptance Criteria:**
+
+* A new prompt-building function exists that assembles a multi-part message history.  
+* The `evaluate_content` function uses this new dynamic prompt.  
+* The final prompt sent to the API includes a system role, few-shot examples, and the user query.
+
+**TODOs:**
+
+* \[ \] **Create Prompt Construction Logic:** In `app/openai_evaluator.py`, create a new helper function, `_construct_prompt_messages(task_type: str, brand_config: dict, user_input: str) -> list`.  
+* \[ \] **Develop System Message Templates:** Inside the new function, create two distinct system message strings: one for `brand_health` and one for `market_intelligence`. These messages should define the AI's expert persona for that task.  
+* \[ \] **Implement Example Injection:** Write logic to select the correct list of examples (`brand_health_examples` or `market_intel_examples`) from the `brand_config` based on the `task_type`.  
+* \[ \] **Format Few-Shot Messages:** Loop through the selected examples. For each example, append two messages to your list: one with `role: "user"` and `content: example['input']`, and another with `role: "assistant"` and `content: example['output']`.  
+* \[ \] **Assemble Final Message History:** The `_construct_prompt_messages` function should return a complete list of messages, starting with the system message, followed by the alternating user/assistant examples, and ending with the final user message containing the `user_input`.  
+* \[ \] **Integrate into `evaluate_content`:** Refactor the main `evaluate_content` function. Remove the old static prompt string and instead call your new `_construct_prompt_messages` helper. Pass the returned message list to the `messages` parameter of the `client.chat.completions.create` call.
+
 
 ### Sprint Plan: Part III \- Performance, Speed, and Cost-Efficiency
 
