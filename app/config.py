@@ -13,7 +13,7 @@ class Settings(BaseSettings):
 
     log_level: str = "INFO"
     redis_url: str = "redis://localhost:6379/0"
-    agent_run_interval_minutes: int = 0
+    agent_run_interval_minutes: int = 600
     brand_repo_path: str = "dev-research/debonair_brand.yaml"
     openai_api_key: str | None = None
 
