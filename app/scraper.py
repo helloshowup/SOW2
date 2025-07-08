@@ -3,7 +3,9 @@ import random
 from dataclasses import dataclass
 from typing import Iterable
 
-from googlesearch import search as google_search
+from googlesearch import search as google_search  # Interacts with Google Search.
+# Ensure usage complies with Google's Terms of Service regarding automated access
+# and data handling.
 import yaml
 import structlog
 
@@ -69,12 +71,31 @@ class SimpleScraper:
 
         results = []
         for res in raw_results:
+            url = getattr(res, "url", "") or ""
+            url = url.strip()
+
+            snippet = getattr(res, "description", "")
+            if snippet is None:
+                snippet = ""
+            snippet = snippet.strip()
+            source_title = getattr(res, "title", "").strip()
+            publication_time = getattr(res, "publication_date", None)
+
+            if not url or not snippet:
+                log.warning(
+                    "Skipping SERP result due to missing URL or snippet",
+                    url_present=bool(url),
+                    snippet_present=bool(snippet),
+                    term=term,
+                )
+                continue
+
             results.append(
                 {
-                    "url": getattr(res, "url", ""),
-                    "snippet": getattr(res, "description", ""),
-                    "source_title": getattr(res, "title", ""),
-                    "publication_time": getattr(res, "publication_date", None),
+                    "url": url,
+                    "snippet": snippet,
+                    "source_title": source_title,
+                    "publication_time": publication_time,
                 }
             )
         return results

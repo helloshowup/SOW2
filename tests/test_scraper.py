@@ -58,3 +58,31 @@ def test_simple_scraper_search_and_crawl(monkeypatch):
     pages = s.crawl(['test'], max_results=2)
     assert pages == results
 
+
+def test_simple_scraper_skips_invalid_results(monkeypatch):
+    class Dummy:
+        def __init__(self, url, title, description):
+            self.url = url
+            self.title = title
+            self.description = description
+
+    def fake_search(term, num_results=10, advanced=False, **kwargs):
+        return [
+            Dummy('', 'T1', 'desc'),
+            Dummy('http://valid.com', 'T2', None),
+            Dummy('http://ok.com', 'T3', 'ok'),
+        ]
+
+    monkeypatch.setattr(scraper, 'google_search', fake_search)
+
+    s = scraper.SimpleScraper()
+    results = s.search('whatever', max_results=3)
+    assert results == [
+        {
+            'url': 'http://ok.com',
+            'snippet': 'ok',
+            'source_title': 'T3',
+            'publication_time': None,
+        }
+    ]
+

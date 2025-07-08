@@ -143,6 +143,12 @@ async def evaluate_content(
         log.error("OpenAI API key is missing. Cannot evaluate content.")
         return None
 
+    log.info(
+        "Evaluating snippet",
+        snippet_length=len(text),
+        task_type=task_type,
+    )
+
     messages = _construct_prompt_messages(task_type, brand_config, text)
 
     try:
