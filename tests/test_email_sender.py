@@ -67,5 +67,5 @@ def test_send_summary_email(monkeypatch):
     assert "on brand specific" in body
     assert "brand relevant but not brand specific" in body
     assert "Brand System Prompt" in body
-    assert "Number of search calls" in body
+    assert "Number of Search Calls" in body
 
