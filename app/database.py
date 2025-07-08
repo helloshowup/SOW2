@@ -6,7 +6,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from .config import get_settings
 
 settings = get_settings()
-engine = create_async_engine(settings.database_url, echo=True)
+engine = create_async_engine(settings.DATABASE_URL, echo=True)
 async_session = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
 
 
