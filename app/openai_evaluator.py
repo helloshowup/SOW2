@@ -2,6 +2,9 @@ from typing import Any, Dict, Optional, List
 
 import instructor
 from openai import AsyncOpenAI
+from functools import lru_cache
+import json
+import asyncio
 from instructor.client import HookName
 import structlog
 
@@ -31,6 +34,33 @@ client.on(
     HookName.COMPLETION_LAST_ATTEMPT,
     lambda e: log.error("All retries exhausted", error=str(e)),
 )
+
+
+def alru_cache(maxsize: int = 128):
+    """A lightweight async-aware LRU cache decorator."""
+
+    def decorator(func):
+        def sync_call(text: str, brand_json: str, task_type: str, create_id: int):
+            brand_cfg = json.loads(brand_json)
+            return asyncio.run(func(text, brand_cfg, task_type))
+
+        cached_sync = lru_cache(maxsize=maxsize)(sync_call)
+
+        async def wrapper(text: str, brand_config: Dict[str, Any], task_type: str = "brand_health"):
+            key = json.dumps(brand_config, sort_keys=True)
+            create_id = id(client.chat.completions.create)
+            hits_before = cached_sync.cache_info().hits
+            loop = asyncio.get_running_loop()
+            result = await loop.run_in_executor(None, cached_sync, text, key, task_type, create_id)
+            if cached_sync.cache_info().hits > hits_before:
+                log.info("Cache hit for evaluate_content")
+            return result
+
+        wrapper.cache_info = cached_sync.cache_info
+        wrapper.cache_clear = cached_sync.cache_clear
+        return wrapper
+
+    return decorator
 
 
 def _construct_prompt_messages(
@@ -81,7 +111,7 @@ async def repair_json_with_llm(text: str) -> Optional[AnalysisResult]:
     log.info("Attempting to repair JSON with LLM")
     try:
         return await client.chat.completions.create(
-            model="gpt-3.5-turbo-0125",
+            model="gpt-4o-mini",
             messages=[
                 {
                     "role": "system",
@@ -98,6 +128,7 @@ async def repair_json_with_llm(text: str) -> Optional[AnalysisResult]:
         log.error("Repair attempt failed", error=str(exc))
     return None
 
+@alru_cache(maxsize=128)
 async def evaluate_content(
     text: str,
     brand_config: Dict[str, Any],
@@ -116,7 +147,7 @@ async def evaluate_content(
 
     try:
         response = await client.chat.completions.create(
-            model="gpt-3.5-turbo-0125",
+            model="gpt-4o-mini",
             messages=messages,
             temperature=0.2,
             response_model=AnalysisResult,

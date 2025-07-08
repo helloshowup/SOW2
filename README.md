@@ -324,10 +324,10 @@ This epic covers the final but critical steps to transform the application from 
 
 **TODOs:**
 
-* \[ \] **Refactor Worker Logic:** In `app/worker.py`, modify the `run_agent_logic` function. Instead of looping and calling `evaluate_content` for each item, first collect all texts into a list.  
-* \[ \] **Create a Batch Processing Entrypoint:** Create a new asynchronous function, `process_batch(texts: list)`, that will manage the concurrent execution.  
-* \[ \] **Implement `asyncio.gather`:** Inside `process_batch`, create a list of awaitable tasks by calling `evaluate_content` for each text. Use `await asyncio.gather(*tasks)` to run them all in parallel.  
-* \[ \] **Update Main Loop:** The main logic in `run_agent_logic` should now call `asyncio.run(process_batch(all_texts))`.
+* [x] **Refactor Worker Logic:** In `app/worker.py`, modify the `run_agent_logic` function. Instead of looping and calling `evaluate_content` for each item, first collect all texts into a list.
+* [x] **Create a Batch Processing Entrypoint:** Create a new asynchronous function, `process_batch(texts: list)`, that will manage the concurrent execution.
+* [x] **Implement `asyncio.gather`:** Inside `process_batch`, create a list of awaitable tasks by calling `evaluate_content` for each text. Use `await asyncio.gather(*tasks)` to run them all in parallel.
+* [x] **Update Main Loop:** The main logic in `run_agent_logic` should now call `asyncio.run(process_batch(all_texts))`.
 
 ### User Story 2: Optimize for Speed and Cost with Smart Defaults (Estimated Time: 30 minutes)
 
@@ -341,10 +341,10 @@ This epic covers the final but critical steps to transform the application from 
 
 **TODOs:**
 
-* \[ \] **Update Default Model:** In `app/openai_evaluator.py`, change the `model` parameter in the `client.chat.completions.create` call from `"gpt-3.5-turbo-0125"` to the faster and more cost-effective `"gpt-4o-mini"`.  
-* \[ \] **Implement In-Memory Cache:** Create a simple decorator-based cache. You can use Python's built-in `functools.lru_cache` for this, as it's perfect for a single-process proof of concept.  
-* \[ \] **Apply Cache Decorator:** Apply the `@lru_cache(maxsize=128)` decorator to the primary processing function (`evaluate_content`) in `app/openai_evaluator.py`. This will automatically cache results based on the function's arguments.  
-* \[ \] **Add Logging for Cache Hits:** (Optional but recommended) Add a log message to show when a result is being served from the cache versus a live API call to make it clear during the demo that the optimization is working.
+* [x] **Update Default Model:** In `app/openai_evaluator.py`, change the `model` parameter in the `client.chat.completions.create` call from `"gpt-3.5-turbo-0125"` to the faster and more cost-effective `"gpt-4o-mini"`.
+* [x] **Implement In-Memory Cache:** Create a simple decorator-based cache. You can use Python's built-in `functools.lru_cache` for this, as it's perfect for a single-process proof of concept.
+* [x] **Apply Cache Decorator:** Apply the `@lru_cache(maxsize=128)` decorator to the primary processing function (`evaluate_content`) in `app/openai_evaluator.py`. This will automatically cache results based on the function's arguments.
+* [x] **Add Logging for Cache Hits:** (Optional but recommended) Add a log message to show when a result is being served from the cache versus a live API call to make it clear during the demo that the optimization is working.
 
 
 
@@ -373,7 +373,7 @@ This epic covers the final but critical steps to transform the application from 
 - [x] Create an .env.example template file: Create a template file that lists all the necessary environment variables but with placeholder values. This provides a clear guide for others on how to create their own .env file.Variables to include: POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB, OPENAI_API_KEY, and all MAIL_* settings.
 - [x] write sample Dockerfile for local launch
 - [x] Create a file named smoke_test.sh in your project's root directory as based on dev-research\smoke-test-suggestion.txt
-- [ ] Documentation updates and final cleanup.
+- [x] Documentation updates and final cleanup.
 
 ## **Coding Practices**
 
