@@ -36,7 +36,7 @@ An automated backend for running AI agents on a schedule. It scrapes the web usi
 
 ## Configuration
 
- All configuration values are read from environment variables. See `.env.example` for reference. Typical variables include `DATABASE_URL`, `LOG_LEVEL`, `REDIS_URL`, `AGENT_RUN_INTERVAL_MINUTES`, and `OPENAI_API_KEY` for the scheduler frequency and API access. To customize scraping queries, copy `search_config.json.example` to `search_config.json` and adjust the `brand_health_queries` and `market_intelligence_queries` lists. When present, this file is automatically loaded by the worker to override dynamically generated search terms.
+ All configuration values are read from environment variables. Typical variables include `DATABASE_URL`, `LOG_LEVEL`, `REDIS_URL`, `AGENT_RUN_INTERVAL_MINUTES`, and `OPENAI_API_KEY`. The `AGENT_RUN_INTERVAL_MINUTES` setting is defined in `app/config.py` and controls how often the scheduler triggers the agent. If not set, it defaults to 600 minutes. To customize scraping queries, copy `search_config.json.example` to `search_config.json` and adjust the `brand_health_queries` and `market_intelligence_queries` lists. When present, this file is automatically loaded by the worker to override dynamically generated search terms.
 
 ## Architecture
 
@@ -80,14 +80,14 @@ CREATE TABLE agent_runs (
 
 ## Workflow
 
-1. **Scheduler** triggers the `/run-agent` endpoint every 10 minutes.
+1. **Scheduler** triggers the `/run-agent` endpoint on the interval defined by `AGENT_RUN_INTERVAL_MINUTES` (default 600 minutes).
 2. **API runner** enqueues a task in Redis and inserts a new `agent_runs` row (`pending`).
 3. **Worker** fetches the task, runs the agent logic, then updates `agent_runs` with `status`, `completed_at`, and the `result` JSON.
 4. On success, the worker sends an email with the top five results.
 
 ## Running the Scheduler
 
-The scheduler runs inside the FastAPI process using **APScheduler**. It is configured in `app/main.py` to call the `/run-agent` endpoint every `AGENT_RUN_INTERVAL_MINUTES` (default 10).
+The scheduler runs inside the FastAPI process using **APScheduler**. In `app/main.py`, a job is scheduled that posts to `/run-agent` every `AGENT_RUN_INTERVAL_MINUTES` minutes. This value comes from `app/config.py`, which loads it from the environment and defaults to 600 minutes (10 hours).
 
 * **Cron job** (alternative):
 
