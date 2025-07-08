@@ -40,7 +40,7 @@ def test_market_queries_mix(monkeypatch):
 
     captured_terms = []
 
-    def fake_crawl(self, terms, max_results=5):
+    async def fake_crawl(self, session, terms, max_results=5):
         captured_terms.append(list(terms))
         return [{"url": "http://example.com", "snippet": "pizza"}]
 

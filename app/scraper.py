@@ -2,14 +2,20 @@ import os
 import random
 from dataclasses import dataclass
 from typing import Iterable
+import json
+from urllib.parse import urlparse
 
-from googlesearch import search as google_search  # Interacts with Google Search.
+from googlesearch import search as google_search  # Interacts with Google Search
 # Ensure usage complies with Google's Terms of Service regarding automated access
 # and data handling.
 import yaml
 import structlog
 
+from sqlmodel import select
+from sqlmodel.ext.asyncio.session import AsyncSession
+
 from .config import get_settings
+from .models import VisitedUrl
 
 log = structlog.get_logger(__name__)
 
@@ -52,14 +58,53 @@ def generate_search_terms(keywords: list[str], max_terms: int = 5) -> list[str]:
     return [f"{kw} news" for kw in sampled]
 
 
+def load_search_config(config_path: str = "search_config.json") -> dict:
+    """Load search configuration from a JSON file in the project root."""
+    search_request_data: dict = {}
+    full_path = os.path.join(os.getcwd(), config_path)
+    if os.path.exists(full_path):
+        try:
+            with open(full_path, "r", encoding="utf-8") as f:
+                search_request_data = json.load(f)
+        except FileNotFoundError:
+            log.error("Configuration file not found at %s. Please create it.", full_path)
+        except json.JSONDecodeError:
+            log.error("Error decoding JSON from %s. Please check its format.", full_path)
+    else:
+        log.info("search_config.json not found at %s", full_path)
+    return search_request_data
+
+
 class SimpleScraper:
     """Utility class that surfaces Google SERP snippets for given queries."""
 
-    def __init__(self) -> None:  # pragma: no cover - trivial initializer
-        pass
+    def __init__(self) -> None:
+        self.search_config = load_search_config()
+        self.blacklisted_domains = set(
+            self.search_config.get("blacklisted_domains", [])
+        )
 
-    def search(self, term: str, max_results: int = 5) -> list[dict]:
-        """Search Google and return structured results with snippets."""
+    async def _is_url_blacklisted(self, url: str) -> bool:
+        """Check if a URL belongs to a blacklisted domain."""
+        try:
+            domain = urlparse(url).netloc
+            if domain.startswith("www."):
+                domain = domain[4:]
+            return domain in self.blacklisted_domains
+        except Exception as e:  # pragma: no cover - malformed URL
+            log.warning(f"Could not parse domain for URL {url}: {e}")
+            return False
+
+    async def _is_url_visited(self, session: AsyncSession, url: str) -> bool:
+        """Check if a URL has already been visited."""
+        statement = select(VisitedUrl).where(VisitedUrl.url == url)
+        result = await session.exec(statement)
+        return result.first() is not None
+
+    async def search(
+        self, session: AsyncSession, term: str, max_results: int = 5
+    ) -> list[dict]:
+        """Search Google and return structured results with snippets, applying filters."""
         log.info("Searching Google for term", term=term)
         try:
             raw_results = list(
@@ -90,6 +135,14 @@ class SimpleScraper:
                 )
                 continue
 
+            if await self._is_url_blacklisted(url):
+                log.info("Skipping blacklisted URL", url=url)
+                continue
+
+            if await self._is_url_visited(session, url):
+                log.info("Skipping already visited URL", url=url)
+                continue
+
             results.append(
                 {
                     "url": url,
@@ -98,12 +151,16 @@ class SimpleScraper:
                     "publication_time": publication_time,
                 }
             )
+            if len(results) >= max_results:
+                break
         return results
 
-    def crawl(self, terms: Iterable[str], max_results: int = 5) -> list[dict]:
+    async def crawl(
+        self, session: AsyncSession, terms: Iterable[str], max_results: int = 5
+    ) -> list[dict]:
         """Return SERP snippet dictionaries for each provided term."""
         pages: list[dict] = []
         for term in terms:
-            for page_data in self.search(term, max_results=max_results):
+            for page_data in await self.search(session, term, max_results=max_results):
                 pages.append(page_data)
         return pages
