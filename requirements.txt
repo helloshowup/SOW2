@@ -4,18 +4,31 @@ uvicorn[standard]
 
 # For the database connection
 sqlalchemy
+sqlmodel
 psycopg2-binary
+
+# For the task queue and cache
+redis
+rq
+
+# For async scheduling and HTTP requests
+apscheduler
+httpx
 
 # For the web scraper
 requests
 beautifulsoup4
+pyyaml
 
 # For the AI evaluator
 openai
 instructor
 
-# For the email service
+# Configuration and logging
 python-dotenv
+pydantic-settings
+structlog
 
 # For testing
 pytest
+pytest-asyncio
