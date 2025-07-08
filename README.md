@@ -192,6 +192,66 @@ To-Do List:
 - [x] Re-format the email body to present the findings under two distinct, clear headings: Brand Health Report and Market Intelligence Briefing.
 5. Update Project Documentation
 - [x] Revise the main project description to reflect its enhanced capabilities as a market intelligence tool.
+ 
+### **Sprint Plan: Implementing a Robust, Structured Data Pipeline**
+
+**Sprint Goal:** To transition the application's core AI interaction from a brittle, manual JSON parsing method to a production-grade, schema-enforced data validation pipeline. This will eliminate data-related runtime errors and significantly increase the reliability of the analysis service.
+
+ **Epic: Guaranteeing Structured Data**
+
+This epic covers all work required to ensure the data received from the OpenAI API is syntactically correct, semantically valid, and resilient to common LLM failures.
+
+### **User Story 1: Define the Data Contract (Estimated Time: 30 minutes)**
+
+**As a developer,** I want to define a canonical Pydantic schema for the AI's analysis output, **so that** there is a single, unambiguous source of truth for the data structure that the entire application can rely on.
+
+**Acceptance Criteria:**
+* A new `AnalysisResult` Pydantic model exists.  
+* The model includes nested structures for sentiment and entities.  
+* All fields are correctly typed and include descriptions.
+
+**TODOs:**
+* \[ \] **Create `AnalysisResult` Schema:** In `app/models.py`, define a new Pydantic `BaseModel` named `AnalysisResult`.  
+* \[ \] **Define Nested `SentimentAnalysis` Model:** Inside `app/models.py`, create a nested `SentimentAnalysis` model with fields for `overall_sentiment` (using `Literal`) and `score` (`float`).  
+* \[ \] **Define Nested `Entity` Model:** Inside `app/models.py`, create a nested `Entity` model with fields for `name` (`str`) and `type` (`str`).  
+* \[ \] **Assemble Final Schema:** The `AnalysisResult` model should include fields for `summary` (`str`), `sentiment` (`SentimentAnalysis`), and `entities` (`List[Entity]`).  
+* \[ \] **Add Docstrings:** Ensure all models and fields have clear, descriptive docstrings as recommended in the research.
+
+### **User Story 2: Enforce the Data Contract (Estimated Time: 1.5 hours)**
+
+**As a developer,** I want to replace the manual `json.loads` with a schema-enforcing library, **so that** the application is resilient to malformed or incomplete AI responses and returns validated objects instead of raw strings.
+
+**Acceptance Criteria:**
+
+* The `instructor` library is added as a dependency.  
+* The `openai_evaluator.py` module is refactored to use `instructor`.  
+* The `evaluate_content` function returns a validated `AnalysisResult` Pydantic object, not a dictionary.
+
+**TODOs:**
+
+* \[ \] **Add Dependency:** Add `instructor` to the project's dependencies (e.g., in a `requirements.txt` file).  
+* \[ \] **Patch OpenAI Client:** In `app/openai_evaluator.py`, import `instructor` and refactor the client initialization to use `instructor.from_openai(OpenAI())`.  
+* \[ \] **Refactor `evaluate_content`:**  
+  * Remove the `try...except json.JSONDecodeError` block.  
+  * Remove the `response_format={"type": "json_object"}` parameter, as `instructor` handles this.  
+  * Add the `response_model=AnalysisResult` parameter to the `client.chat.completions.create` call.  
+  * Update the function's return type hint to `-> AnalysisResult`.  
+* \[ \] **Update Worker Logic:** In `app/worker.py`, modify the call to `evaluate_content` to handle the returned Pydantic object directly (e.g., using `result.model_dump_json()` if a JSON string is needed downstream).
+
+### **User Story 3: Implement Intelligent Error Handling (Estimated Time: 30 minutes)**
+
+**As a developer,** I want the system to automatically retry API calls that fail validation, **so that** it can self-correct from common LLM hallucinations or formatting errors without manual intervention.
+
+**Acceptance Criteria:**
+
+* The API call is configured to retry on validation failure.  
+* A log message is generated when a retry occurs.
+
+**TODOs:**
+* \[ \] **Enable Automatic Retries:** In `app/openai_evaluator.py`, add the `max_retries=2` parameter to the `client.chat.completions.create` call.  
+* \[ \] **Add Logging:** Implement basic logging within `evaluate_content` to capture and report when `instructor` performs a retry, which can be useful for monitoring the LLM's consistency.  
+* \[ \] **(Stretch Goal) Implement Final Safety Net:** For maximum robustness, create the `repair_json_with_llm` function from the research document and add it as a final `except` block to handle cases where even retries fail.
+
 
 ## General TODOs
 - [x] Initialize FastAPI project structure (`app/main.py`, `app/routes.py`).
