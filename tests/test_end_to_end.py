@@ -1,5 +1,7 @@
 import os
 import asyncio
+
+os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite://")
 from sqlmodel import SQLModel
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -42,10 +44,10 @@ def test_end_to_end(monkeypatch):
     monkeypatch.setattr(
         scraper.SimpleScraper,
         "crawl",
-        lambda self, terms: [{"url": "http://example.com", "text": "pizza"}],
+        lambda self, terms: [{"url": "http://example.com", "snippet": "pizza"}],
     )
 
-    async def fake_eval(text, config, task_type):
+    async def fake_eval(snippet, config, task_type):
         return AnalysisResult(
             summary="great",
             sentiment=SentimentAnalysis(overall_sentiment="positive", score=0.9),
@@ -97,3 +99,4 @@ def test_end_to_end(monkeypatch):
         or sent["on_brand"] is None
         or isinstance(sent["on_brand"], list)
     )
+

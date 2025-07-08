@@ -17,5 +17,6 @@ python-dotenv
 pydantic-settings
 structlog
 python-json-logger
+googlesearch-python
 pytest
 pytest-asyncio

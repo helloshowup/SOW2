@@ -1,6 +1,7 @@
 import os
 import pytest
 
+os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite://")
 os.environ["OPENAI_API_KEY"] = "test"
 from app import openai_evaluator
 from app.models import AnalysisResult, SentimentAnalysis
@@ -67,3 +68,4 @@ async def test_evaluate_content_repair(monkeypatch):
         "brand_health",
     )
     assert result.summary == "fixed"
+

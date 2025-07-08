@@ -1,5 +1,9 @@
+import os
 import smtplib
 from email.mime.multipart import MIMEMultipart
+
+os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite://")
+os.environ.setdefault("OPENAI_API_KEY", "test")
 
 from app.email_sender import EmailSender
 
@@ -64,3 +68,4 @@ def test_send_summary_email(monkeypatch):
     assert "brand relevant but not brand specific" in body
     assert "Brand System Prompt" in body
     assert "Number of search calls" in body
+
