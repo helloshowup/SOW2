@@ -1,17 +1,23 @@
 import asyncio
 import os
 import random
-from datetime import datetime
+from datetime import datetime, date
 from typing import Any, Dict, List
+from urllib.parse import urlparse
 
 import structlog
 
 from .email_sender import EmailSender
-from .scraper import SimpleScraper, load_brand_keywords, generate_search_terms
+from .scraper import (
+    SimpleScraper,
+    load_brand_keywords,
+    load_search_config,
+    generate_search_terms,
+)
 from .brand_parser import load_brand_config
 from .openai_evaluator import _construct_prompt_messages
 from . import database
-from .models import AgentRun
+from .models import AgentRun, VisitedUrl
 
 log = structlog.get_logger()
 
@@ -37,9 +43,8 @@ async def _process_batch(pages: List[Dict[str, Any]], brand_config: Dict[str, An
 
 async def run_agent_iteration(run_id: int, search_request: dict | None = None) -> None:
     """Execute one iteration of the agent logic collecting rich metadata."""
-    try:
-        # mark run as running
-        async with database.async_session() as session:
+    async with database.async_session() as session:
+        try:
             run = await session.get(AgentRun, run_id)
             if not run:
                 log.error("AgentRun not found", run_id=run_id)
@@ -47,161 +52,193 @@ async def run_agent_iteration(run_id: int, search_request: dict | None = None) -
             run.status = "running"
             session.add(run)
             await session.commit()
+            await session.refresh(run)
 
-        brand_id = os.getenv("BRAND_ID", "debonairs")
-        brand_config = load_brand_config(brand_id) or {}
-        keywords = load_brand_keywords(brand_id)
+            brand_id = os.getenv("BRAND_ID", "debonairs")
+            brand_config = load_brand_config(brand_id) or {}
+            keywords = load_brand_keywords(brand_id)
 
-        scraper = SimpleScraper()
-        search_terms_generated: List[str] = []
-        search_times: List[str] = []
-        brand_pages: List[Dict[str, Any]] = []
-        market_pages: List[Dict[str, Any]] = []
-
-        max_generated_terms = (
-            search_request.get("max_search_terms_generated", 5) if search_request else 5
-        )
-
-        brand_queries: List[str] = []
-        market_queries: List[str] = (
-            search_request.get("market_intelligence_queries", [])
-            if search_request
-            else []
-        )
-
-        custom_query_phrases = None
-        if search_request:
-            custom_query_phrases = search_request.get("custom_query_phrases")
-            if not custom_query_phrases:
-                custom_query_phrases = search_request.get("brand_health_queries")
-
-        if custom_query_phrases and keywords:
-            sampled_keywords = random.sample(
-                keywords, min(max_generated_terms, len(keywords))
+            scraper = SimpleScraper()
+            search_terms_generated: List[str] = []
+            search_times: List[str] = []
+            brand_pages: List[Dict[str, Any]] = []
+            market_pages: List[Dict[str, Any]] = []
+    
+            # Load search config for dynamic phrases
+            current_search_config = load_search_config()
+            rotating_search_phrases = current_search_config.get(
+                "rotating_search_phrases", ["news", "updates", "trends"]
             )
-            generated_custom_queries: List[str] = []
-            for kw in sampled_keywords:
-                for phrase in custom_query_phrases:
-                    generated_custom_queries.append(f"{kw} {phrase}")
+    
+            max_generated_terms = (
+                search_request.get("max_search_terms_generated", 5) if search_request else 5
+            )
+    
+            brand_queries: List[str] = []
+            market_queries: List[str] = (
+                search_request.get("market_intelligence_queries", [])
+                if search_request
+                else []
+            )
+    
+            custom_query_phrases = None
+            if search_request:
+                custom_query_phrases = search_request.get("custom_query_phrases")
+                if not custom_query_phrases:
+                    custom_query_phrases = search_request.get("brand_health_queries")
+    
+            if custom_query_phrases and keywords:
+                sampled_keywords = random.sample(
+                    keywords, min(max_generated_terms, len(keywords))
+                )
+                generated_custom_queries: List[str] = []
+                for kw in sampled_keywords:
+                    # Mix and match with rotating search phrases
+                    random_phrase = random.choice(rotating_search_phrases)
+                    generated_custom_queries.append(f"{kw} {random_phrase}")
                     if len(generated_custom_queries) >= max_generated_terms:
                         break
-                if len(generated_custom_queries) >= max_generated_terms:
-                    break
-            if generated_custom_queries:
-                brand_queries = generated_custom_queries
+                if generated_custom_queries:
+                    brand_queries = generated_custom_queries
+                    log.info(
+                        "Generated custom queries from search_config.json with rotating phrases",
+                        num_queries=len(brand_queries),
+                    )
+    
+            defaults_used = False
+            if not brand_queries:
+                brand_queries = brand_config.get("search_queries", {}).get(
+                    "brand_health", []
+                )
+                defaults_used = defaults_used or bool(brand_queries)
+            if not market_queries:
+                market_queries = brand_config.get("search_queries", {}).get(
+                    "market_intelligence", []
+                )
+                defaults_used = defaults_used or bool(market_queries)
+            if defaults_used:
                 log.info(
-                    "Generated custom queries from search_config.json",
+                    "Using generic default queries from brand config",
+                    num_brand_queries=len(brand_queries),
+                    num_market_queries=len(market_queries),
+                )
+    
+            if not brand_queries and not market_queries:
+                # If no specific queries, generate from keywords + rotating phrases
+                generated_fallback_queries: List[str] = []
+                if keywords:
+                    sampled_keywords = random.sample(
+                        keywords, min(max_generated_terms, len(keywords))
+                    )
+                    for kw in sampled_keywords:
+                        random_phrase = random.choice(rotating_search_phrases)
+                        generated_fallback_queries.append(f"{kw} {random_phrase}")
+                        if len(generated_fallback_queries) >= max_generated_terms:
+                            break
+                brand_queries = generated_fallback_queries or ["latest news"]
+                log.info(
+                    "Using generated queries from keywords and rotating phrases as fallback",
                     num_queries=len(brand_queries),
                 )
-
-        defaults_used = False
-        if not brand_queries:
-            brand_queries = brand_config.get("search_queries", {}).get(
-                "brand_health", []
-            )
-            defaults_used = defaults_used or bool(brand_queries)
-        if not market_queries:
-            market_queries = brand_config.get("search_queries", {}).get(
-                "market_intelligence", []
-            )
-            defaults_used = defaults_used or bool(market_queries)
-        if defaults_used:
-            log.info(
-                "Using generic default queries from brand config",
-                num_brand_queries=len(brand_queries),
-                num_market_queries=len(market_queries),
-            )
-
-        if not brand_queries and not market_queries:
-            brand_queries = generate_search_terms(
-                keywords, max_terms=max_generated_terms
-            )
-            log.info(
-                "Using simple 'news' queries as fallback",
-                num_queries=len(brand_queries),
-            )
-
-        search_terms_generated.extend(brand_queries)
-        search_terms_generated.extend(market_queries)
-
-        def crawl_terms(terms: List[str]) -> List[Dict[str, Any]]:
-            pages: List[Dict[str, Any]] = []
-            if not terms:
+    
+            search_terms_generated.extend(brand_queries)
+            search_terms_generated.extend(market_queries)
+    
+            async def crawl_terms(terms: List[str]) -> List[Dict[str, Any]]:
+                pages: List[Dict[str, Any]] = []
+                if not terms:
+                    return pages
+                search_times.extend([datetime.utcnow().isoformat() for _ in terms])
+                for page in await scraper.crawl(session, terms):
+                    pages.append(page)
                 return pages
-            search_times.extend([datetime.utcnow().isoformat() for _ in terms])
-            for page in scraper.crawl(terms):
-                pages.append(page)
-            return pages
-
-        brand_pages = crawl_terms(brand_queries)
-        market_pages = crawl_terms(market_queries)
-
-        brand_evals: List[Dict[str, Any]] = []
-        market_evals: List[Dict[str, Any]] = []
-        if brand_pages:
-            brand_evals = await _process_batch(brand_pages, brand_config, "brand_health")
-        if market_pages:
-            market_evals = await _process_batch(market_pages, brand_config, "market_intelligence")
-
-        brand_terms = [brand_config.get("display_name", "").lower()] + [k.lower() for k in keywords]
-
-        # limit for number of links to send
-        max_email_links = search_request.get("max_email_links", 10) if search_request else 10
-
-        evaluated_pages_with_scores: List[Dict[str, Any]] = []
-        all_pages = brand_pages + market_pages
-        all_evals = brand_evals + market_evals
-        for page, res in zip(all_pages, all_evals):
-            if (
-                res
-                and page.get("url")
-                and "relevance_score" in res
-                and "categories" in res
-            ):
-                evaluated_pages_with_scores.append(
-                    {
-                        "url": page.get("url"),
-                        "snippet": page.get("snippet", ""),
-                        "evaluation": res,
-                    }
-                )
-
-        on_brand_specific_items: List[Dict[str, Any]] = []
-        brand_relevant_items: List[Dict[str, Any]] = []
-
-        for item in evaluated_pages_with_scores:
-            url = item["url"]
-            snippet = item["snippet"].lower()
-            score = item["evaluation"].get("relevance_score", 0)
-            heading = item["evaluation"].get("snappy_heading", "")
-
-            if any(term in snippet for term in brand_terms):
-                on_brand_specific_items.append({"url": url, "score": score, "snappy_heading": heading})
-            else:
-                brand_relevant_items.append({"url": url, "score": score, "snappy_heading": heading})
-
-        on_brand_specific_items.sort(key=lambda x: x["score"], reverse=True)
-        brand_relevant_items.sort(key=lambda x: x["score"], reverse=True)
-
-        on_brand_specific_links = [
-            {"url": i["url"], "snappy_heading": i.get("snappy_heading", "")}
-            for i in on_brand_specific_items[:max_email_links]
-        ]
-        brand_relevant_links = [
-            {"url": i["url"], "snappy_heading": i.get("snappy_heading", "")}
-            for i in brand_relevant_items[:max_email_links]
-        ]
-
-        content_summaries = [
-            item["evaluation"].get("summary", "")
-            for item in evaluated_pages_with_scores
-        ]
-        user_prompt = all_pages[0]["snippet"] if all_pages else ""
-        brand_system_prompt = _construct_prompt_messages("brand_health", brand_config, "")[0]["content"]
-        market_system_prompt = _construct_prompt_messages("market_intelligence", brand_config, "")[0]["content"]
-
-        # store results
-        async with database.async_session() as session:
+    
+            brand_pages = await crawl_terms(brand_queries)
+            market_pages = await crawl_terms(market_queries)
+    
+            # Store visited URLs
+            current_date = date.today()
+            for page in brand_pages + market_pages:
+                try:
+                    parsed = urlparse(page["url"])
+                    domain = parsed.netloc
+                    url_obj = VisitedUrl(
+                        url=page["url"], domain=domain, last_visited_date=current_date
+                    )
+                    session.add(url_obj)
+                    await session.commit()
+                    await session.refresh(url_obj)
+                except Exception as e:
+                    log.warning(
+                        f"Could not add URL to VisitedUrl table: {page['url']}, Error: {e}"
+                    )
+                    await session.rollback()
+    
+            brand_evals: List[Dict[str, Any]] = []
+            market_evals: List[Dict[str, Any]] = []
+            if brand_pages:
+                brand_evals = await _process_batch(brand_pages, brand_config, "brand_health")
+            if market_pages:
+                market_evals = await _process_batch(market_pages, brand_config, "market_intelligence")
+    
+            brand_terms = [brand_config.get("display_name", "").lower()] + [k.lower() for k in keywords]
+    
+            # limit for number of links to send
+            max_email_links = search_request.get("max_email_links", 10) if search_request else 10
+    
+            evaluated_pages_with_scores: List[Dict[str, Any]] = []
+            all_pages = brand_pages + market_pages
+            all_evals = brand_evals + market_evals
+            for page, res in zip(all_pages, all_evals):
+                if (
+                    res
+                    and page.get("url")
+                    and "relevance_score" in res
+                    and "categories" in res
+                ):
+                    evaluated_pages_with_scores.append(
+                        {
+                            "url": page.get("url"),
+                            "snippet": page.get("snippet", ""),
+                            "evaluation": res,
+                        }
+                    )
+    
+            on_brand_specific_items: List[Dict[str, Any]] = []
+            brand_relevant_items: List[Dict[str, Any]] = []
+    
+            for item in evaluated_pages_with_scores:
+                url = item["url"]
+                snippet = item["snippet"].lower()
+                score = item["evaluation"].get("relevance_score", 0)
+                heading = item["evaluation"].get("snappy_heading", "")
+    
+                if any(term in snippet for term in brand_terms):
+                    on_brand_specific_items.append({"url": url, "score": score, "snappy_heading": heading})
+                else:
+                    brand_relevant_items.append({"url": url, "score": score, "snappy_heading": heading})
+    
+            on_brand_specific_items.sort(key=lambda x: x["score"], reverse=True)
+            brand_relevant_items.sort(key=lambda x: x["score"], reverse=True)
+    
+            on_brand_specific_links = [
+                {"url": i["url"], "snappy_heading": i.get("snappy_heading", "")}
+                for i in on_brand_specific_items[:max_email_links]
+            ]
+            brand_relevant_links = [
+                {"url": i["url"], "snappy_heading": i.get("snappy_heading", "")}
+                for i in brand_relevant_items[:max_email_links]
+            ]
+    
+            content_summaries = [
+                item["evaluation"].get("summary", "")
+                for item in evaluated_pages_with_scores
+            ]
+            user_prompt = all_pages[0]["snippet"] if all_pages else ""
+            brand_system_prompt = _construct_prompt_messages("brand_health", brand_config, "")[0]["content"]
+            market_system_prompt = _construct_prompt_messages("market_intelligence", brand_config, "")[0]["content"]
+    
+            # store results
             run = await session.get(AgentRun, run_id)
             if run:
                 run.status = "completed"
@@ -212,18 +249,24 @@ async def run_agent_iteration(run_id: int, search_request: dict | None = None) -
                 }
                 session.add(run)
                 await session.commit()
-
-        EmailSender().send_summary_email(
-            run_id=run_id,
-            on_brand_specific_links=on_brand_specific_links,
-            brand_relevant_links=brand_relevant_links,
-            brand_system_prompt=brand_system_prompt,
-            market_system_prompt=market_system_prompt,
-            user_prompt=user_prompt,
-            search_terms_generated=search_terms_generated,
-            num_search_calls=len(search_terms_generated),
-            search_times=search_times,
-            content_summaries=content_summaries,
-        )
-    except Exception as exc:  # pragma: no cover - runtime safety
-        log.error("Agent iteration failed", run_id=run_id, error=str(exc), exc_info=True)
+    
+            EmailSender().send_summary_email(
+                run_id=run_id,
+                on_brand_specific_links=on_brand_specific_links,
+                brand_relevant_links=brand_relevant_links,
+                brand_system_prompt=brand_system_prompt,
+                market_system_prompt=market_system_prompt,
+                user_prompt=user_prompt,
+                search_terms_generated=search_terms_generated,
+                num_search_calls=len(search_terms_generated),
+                search_times=search_times,
+                content_summaries=content_summaries,
+            )
+        except Exception as exc:  # pragma: no cover - runtime safety
+            log.error("Agent iteration failed", run_id=run_id, error=str(exc), exc_info=True)
+            run = await session.get(AgentRun, run_id)
+            if run:
+                run.status = "failed"
+                run.error_message = str(exc)
+                session.add(run)
+                await session.commit()
