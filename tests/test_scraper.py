@@ -13,7 +13,7 @@ def test_generate_search_terms():
 
 
 def test_load_brand_keywords():
-    keywords = scraper.load_brand_keywords('debonairs', 'dev-research/brand_repo.yaml')
+    keywords = scraper.load_brand_keywords('debonairs', 'dev-research/debonair_brand.yaml')
     assert 'pizza' in keywords
     assert 'interactive' in keywords
 

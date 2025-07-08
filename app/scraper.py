@@ -9,7 +9,7 @@ import yaml
 
 log = logging.getLogger(__name__)
 
-BRAND_REPO_PATH = "dev-research/brand_repo.yaml"
+BRAND_REPO_PATH = "dev-research/debonair_brand.yaml"
 
 
 def load_brand_keywords(brand_id: str, brand_repo_path: str = BRAND_REPO_PATH) -> List[str]:
