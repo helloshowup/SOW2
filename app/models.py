@@ -1,7 +1,7 @@
 from datetime import datetime, date
 from typing import List, Literal, Optional
 
-from sqlalchemy import Column
+from sqlalchemy import Column, Integer, String, Text, Float, DateTime
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, SQLModel
 from pydantic import BaseModel, Field as PydanticField
@@ -75,5 +75,23 @@ class AnalysisResult(BaseModel):
         default_factory=list,
         description="Categories or topics associated with the content",
     )
+
+
+# SQLAlchemy model for storing evaluated snippets
+from .database import Base
+
+
+class EvaluatedSnippet(Base):
+    """Persisted snippet evaluation results."""
+
+    __tablename__ = "evaluated_snippets"
+
+    id = Column(Integer, primary_key=True, index=True)
+    url = Column(String, index=True)
+    title = Column(String, nullable=True)
+    content_summary = Column(Text)
+    relevance_score = Column(Float)
+    category = Column(String)
+    timestamp = Column(DateTime, default=datetime.utcnow)
 
 

@@ -6,18 +6,17 @@ from typing import Any, Dict, List
 from urllib.parse import urlparse
 
 import structlog
-
 from .email_sender import EmailSender
 from .scraper import (
     SimpleScraper,
     load_brand_keywords,
     load_search_config,
-    generate_search_terms,
 )
 from .brand_parser import load_brand_config
 from .openai_evaluator import _construct_prompt_messages
 from . import database
-from .models import AgentRun, VisitedUrl
+from .database import get_db
+from .models import AgentRun, VisitedUrl, EvaluatedSnippet
 
 log = structlog.get_logger()
 
@@ -214,6 +213,37 @@ async def run_agent_iteration(run_id: int, search_request: dict | None = None) -
                 brand_evals = await _process_batch(brand_pages, brand_config, "brand_health")
             if market_pages:
                 market_evals = await _process_batch(market_pages, brand_config, "market_intelligence")
+
+            # Persist evaluated snippets
+            try:
+                db_gen = get_db()
+                db = next(db_gen)
+                for ev in brand_evals:
+                    new_snippet = EvaluatedSnippet(
+                        url=ev.get("url"),
+                        title=ev.get("snappy_heading"),
+                        content_summary=ev.get("summary"),
+                        relevance_score=ev.get("relevance_score"),
+                        category="brand_health",
+                    )
+                    db.add(new_snippet)
+                for ev in market_evals:
+                    new_snippet = EvaluatedSnippet(
+                        url=ev.get("url"),
+                        title=ev.get("snappy_heading"),
+                        content_summary=ev.get("summary"),
+                        relevance_score=ev.get("relevance_score"),
+                        category="market_intelligence",
+                    )
+                    db.add(new_snippet)
+                db.commit()
+            except Exception as e:
+                if 'db' in locals():
+                    db.rollback()
+                log.error("Failed to store evaluated snippets", error=str(e))
+            finally:
+                if 'db' in locals():
+                    db.close()
     
             brand_terms = [brand_config.get("display_name", "").lower()] + [k.lower() for k in keywords]
     
@@ -283,7 +313,7 @@ async def run_agent_iteration(run_id: int, search_request: dict | None = None) -
                 }
                 session.add(run)
                 await session.commit()
-    
+
             EmailSender().send_summary_email(
                 run_id=run_id,
                 on_brand_specific_links=on_brand_specific_links,
@@ -296,6 +326,7 @@ async def run_agent_iteration(run_id: int, search_request: dict | None = None) -
                 search_times=search_times,
                 content_summaries=content_summaries,
             )
+    
         except Exception as exc:  # pragma: no cover - runtime safety
             log.error("Agent iteration failed", run_id=run_id, error=str(exc), exc_info=True)
             run = await session.get(AgentRun, run_id)
