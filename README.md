@@ -275,10 +275,10 @@ This epic focuses on transforming the AI from a general-purpose text analyzer in
 
 **TODOs:**
 
-* \[ \] **Update `brand_repo.yaml` Structure:** Add two new top-level keys to `dev-research/brand_repo.yaml`: `brand_health_examples` and `market_intel_examples`.  
-* \[ \] **Populate Brand Health Examples:** Under `brand_health_examples`, add 2-3 examples. Each example should have an `input` (a sample text about customer service, product quality, etc.) and an `output` (the ideal JSON analysis focusing on brand health metrics).  
-* \[ \] **Populate Market Intelligence Examples:** Under `market_intel_examples`, add 2-3 examples. Each example should have an `input` (a sample text about a competitor's move, a new technology, etc.) and an `output` (the ideal JSON analysis focusing on market trends and opportunities).  
-* \[ \] **Crucial Validation Step:** For each example you create, manually copy the `output` JSON and validate it against the `AnalysisResult` Pydantic model from Part I. This ensures the examples are perfectly aligned with the schema, preventing model confusion.
+* \[x] **Update `brand_repo.yaml` Structure:** Add two new top-level keys to `dev-research/brand_repo.yaml`: `brand_health_examples` and `market_intel_examples`.  
+* \[x] **Populate Brand Health Examples:** Under `brand_health_examples`, add 2-3 examples. Each example should have an `input` (a sample text about customer service, product quality, etc.) and an `output` (the ideal JSON analysis focusing on brand health metrics).  
+* \[x] **Populate Market Intelligence Examples:** Under `market_intel_examples`, add 2-3 examples. Each example should have an `input` (a sample text about a competitor's move, a new technology, etc.) and an `output` (the ideal JSON analysis focusing on market trends and opportunities).  
+* \[x] **Crucial Validation Step:** For each example you create, manually copy the `output` JSON and validate it against the `AnalysisResult` Pydantic model from Part I. This ensures the examples are perfectly aligned with the schema, preventing model confusion.
 
 ##### User Story 2: Implement a Dynamic, Task-Aware Prompt Engine (Estimated Time: 45 minutes)
 
@@ -292,12 +292,12 @@ This epic focuses on transforming the AI from a general-purpose text analyzer in
 
 **TODOs:**
 
-* \[ \] **Create Prompt Construction Logic:** In `app/openai_evaluator.py`, create a new helper function, `_construct_prompt_messages(task_type: str, brand_config: dict, user_input: str) -> list`.  
-* \[ \] **Develop System Message Templates:** Inside the new function, create two distinct system message strings: one for `brand_health` and one for `market_intelligence`. These messages should define the AI's expert persona for that task.  
-* \[ \] **Implement Example Injection:** Write logic to select the correct list of examples (`brand_health_examples` or `market_intel_examples`) from the `brand_config` based on the `task_type`.  
-* \[ \] **Format Few-Shot Messages:** Loop through the selected examples. For each example, append two messages to your list: one with `role: "user"` and `content: example['input']`, and another with `role: "assistant"` and `content: example['output']`.  
-* \[ \] **Assemble Final Message History:** The `_construct_prompt_messages` function should return a complete list of messages, starting with the system message, followed by the alternating user/assistant examples, and ending with the final user message containing the `user_input`.  
-* \[ \] **Integrate into `evaluate_content`:** Refactor the main `evaluate_content` function. Remove the old static prompt string and instead call your new `_construct_prompt_messages` helper. Pass the returned message list to the `messages` parameter of the `client.chat.completions.create` call.
+* \[x] **Create Prompt Construction Logic:** In `app/openai_evaluator.py`, create a new helper function, `_construct_prompt_messages(task_type: str, brand_config: dict, user_input: str) -> list`.
+* \[x] **Develop System Message Templates:** Inside the new function, create two distinct system message strings: one for `brand_health` and one for `market_intelligence`. These messages should define the AI's expert persona for that task.
+* \[x] **Implement Example Injection:** Write logic to select the correct list of examples (`brand_health_examples` or `market_intel_examples`) from the `brand_config` based on the `task_type`.
+* \[x] **Format Few-Shot Messages:** Loop through the selected examples. For each example, append two messages to your list: one with `role: "user"` and `content: example['input']`, and another with `role: "assistant"` and `content: example['output']`.
+* \[x] **Assemble Final Message History:** The `_construct_prompt_messages` function should return a complete list of messages, starting with the system message, followed by the alternating user/assistant examples, and ending with the final user message containing the `user_input`.
+* \[x] **Integrate into `evaluate_content`:** Refactor the main `evaluate_content` function. Remove the old static prompt string and instead call your new `_construct_prompt_messages` helper. Pass the returned message list to the `messages` parameter of the `client.chat.completions.create` call.
 
 
 ### Sprint Plan: Part III \- Performance, Speed, and Cost-Efficiency
@@ -324,10 +324,10 @@ This epic covers the final but critical steps to transform the application from 
 
 **TODOs:**
 
-* \[ \] **Refactor Worker Logic:** In `app/worker.py`, modify the `run_agent_logic` function. Instead of looping and calling `evaluate_content` for each item, first collect all texts into a list.  
-* \[ \] **Create a Batch Processing Entrypoint:** Create a new asynchronous function, `process_batch(texts: list)`, that will manage the concurrent execution.  
-* \[ \] **Implement `asyncio.gather`:** Inside `process_batch`, create a list of awaitable tasks by calling `evaluate_content` for each text. Use `await asyncio.gather(*tasks)` to run them all in parallel.  
-* \[ \] **Update Main Loop:** The main logic in `run_agent_logic` should now call `asyncio.run(process_batch(all_texts))`.
+* [x] **Refactor Worker Logic:** In `app/worker.py`, modify the `run_agent_logic` function. Instead of looping and calling `evaluate_content` for each item, first collect all texts into a list.
+* [x] **Create a Batch Processing Entrypoint:** Create a new asynchronous function, `process_batch(texts: list)`, that will manage the concurrent execution.
+* [x] **Implement `asyncio.gather`:** Inside `process_batch`, create a list of awaitable tasks by calling `evaluate_content` for each text. Use `await asyncio.gather(*tasks)` to run them all in parallel.
+* [x] **Update Main Loop:** The main logic in `run_agent_logic` should now call `asyncio.run(process_batch(all_texts))`.
 
 ### User Story 2: Optimize for Speed and Cost with Smart Defaults (Estimated Time: 30 minutes)
 
@@ -341,10 +341,10 @@ This epic covers the final but critical steps to transform the application from 
 
 **TODOs:**
 
-* \[ \] **Update Default Model:** In `app/openai_evaluator.py`, change the `model` parameter in the `client.chat.completions.create` call from `"gpt-3.5-turbo-0125"` to the faster and more cost-effective `"gpt-4o-mini"`.  
-* \[ \] **Implement In-Memory Cache:** Create a simple decorator-based cache. You can use Python's built-in `functools.lru_cache` for this, as it's perfect for a single-process proof of concept.  
-* \[ \] **Apply Cache Decorator:** Apply the `@lru_cache(maxsize=128)` decorator to the primary processing function (`evaluate_content`) in `app/openai_evaluator.py`. This will automatically cache results based on the function's arguments.  
-* \[ \] **Add Logging for Cache Hits:** (Optional but recommended) Add a log message to show when a result is being served from the cache versus a live API call to make it clear during the demo that the optimization is working.
+* [x] **Update Default Model:** In `app/openai_evaluator.py`, change the `model` parameter in the `client.chat.completions.create` call from `"gpt-3.5-turbo-0125"` to the faster and more cost-effective `"gpt-4o-mini"`.
+* [x] **Implement In-Memory Cache:** Create a simple decorator-based cache. You can use Python's built-in `functools.lru_cache` for this, as it's perfect for a single-process proof of concept.
+* [x] **Apply Cache Decorator:** Apply the `@lru_cache(maxsize=128)` decorator to the primary processing function (`evaluate_content`) in `app/openai_evaluator.py`. This will automatically cache results based on the function's arguments.
+* [x] **Add Logging for Cache Hits:** (Optional but recommended) Add a log message to show when a result is being served from the cache versus a live API call to make it clear during the demo that the optimization is working.
 
 
 
@@ -373,7 +373,7 @@ This epic covers the final but critical steps to transform the application from 
 - [x] Create an .env.example template file: Create a template file that lists all the necessary environment variables but with placeholder values. This provides a clear guide for others on how to create their own .env file.Variables to include: POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB, OPENAI_API_KEY, and all MAIL_* settings.
 - [x] write sample Dockerfile for local launch
 - [x] Create a file named smoke_test.sh in your project's root directory as based on dev-research\smoke-test-suggestion.txt
-- [ ] Documentation updates and final cleanup.
+- [x] Documentation updates and final cleanup.
 
 ## **Coding Practices**
 
