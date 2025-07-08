@@ -1,6 +1,6 @@
 # AI Agent Workflow Backend
 
-A minimal backend setup for running an AI agent every 10 minutes, persisting results, and emailing the top five outcomes. Designed as a self‑hosted MVP on a single instance and should be demo by the Debonairs brand in \dev-research\brand_repo.yaml only
+An automated backend for running AI agents on a schedule. It scrapes the web using configurable queries, evaluates findings with OpenAI, and emails a concise summary. Originally a simple brand monitor, the project now also surfaces broader market intelligence so you can track industry trends alongside brand health.
 
 ## Table of Contents
 
@@ -190,8 +190,8 @@ To-Do List:
 4. Improve Email Summaries (app/email\_sender.py)
 - [x] Update the send\_summary\_email function to accept the consolidated results from both tasks.
 - [x] Re-format the email body to present the findings under two distinct, clear headings: Brand Health Report and Market Intelligence Briefing.
-5. Update Project Documentation  
-- [ ] Revise the main project description to reflect its enhanced capabilities as a market intelligence tool.
+5. Update Project Documentation
+- [x] Revise the main project description to reflect its enhanced capabilities as a market intelligence tool.
 
 ## General TODOs
 - [x] Initialize FastAPI project structure (`app/main.py`, `app/routes.py`).
