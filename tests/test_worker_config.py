@@ -10,6 +10,7 @@ def test_run_agent_logic_loads_search_config(tmp_path, monkeypatch):
     config = {
         "brand_health_queries": ["foo"],
         "market_intelligence_queries": ["bar"],
+        "max_email_links": 5,
     }
     path = tmp_path / "search_config.json"
     path.write_text(json.dumps(config))

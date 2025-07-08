@@ -52,6 +52,8 @@ def test_end_to_end(monkeypatch):
             summary="great",
             sentiment=SentimentAnalysis(overall_sentiment="positive", score=0.9),
             entities=[],
+            relevance_score=80.0,
+            categories=["News"],
         )
 
     monkeypatch.setattr(worker, "evaluate_content", fake_eval)

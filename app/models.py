@@ -65,4 +65,12 @@ class AnalysisResult(BaseModel):
         description="Entities mentioned in the content",
     )
 
+    relevance_score: float = PydanticField(
+        description="Relevance score from 0-100 for how on-topic the content is",
+    )
+    categories: List[str] = PydanticField(
+        default_factory=list,
+        description="Categories or topics associated with the content",
+    )
+
 
