@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
-from sqlmodel import Session
+from sqlmodel.ext.asyncio.session import AsyncSession
 import structlog
 
 from .database import get_session
@@ -15,19 +15,19 @@ class FeedbackPayload(BaseModel):
     feedback: str = Field(..., pattern="^(yes|no)$", description="yes or no")
 
 
-def _store_feedback(session: Session, run_id: int, feedback: str) -> None:
-    run = session.get(AgentRun, run_id)
+async def _store_feedback(session: AsyncSession, run_id: int, feedback: str) -> None:
+    run = await session.get(AgentRun, run_id)
     if not run:
         raise HTTPException(status_code=404, detail="AgentRun not found")
     fb = Feedback(run_id=run_id, value=feedback.lower())
     session.add(fb)
-    session.commit()
+    await session.commit()
     log.info("Feedback received", run_id=run_id, feedback=feedback)
 
 @router.post("/feedback")
-async def receive_feedback(payload: FeedbackPayload, session: Session = Depends(get_session)):
+async def receive_feedback(payload: FeedbackPayload, session: AsyncSession = Depends(get_session)):
     """Record yes/no feedback for a run via POST."""
-    _store_feedback(session, payload.run_id, payload.feedback)
+    await _store_feedback(session, payload.run_id, payload.feedback)
     return {"message": "Feedback recorded"}
 
 
@@ -35,8 +35,8 @@ async def receive_feedback(payload: FeedbackPayload, session: Session = Depends(
 async def receive_feedback_get(
     run_id: int = Query(..., description="Agent run ID"),
     feedback: str = Query(..., pattern="^(yes|no)$", description="yes or no"),
-    session: Session = Depends(get_session),
+    session: AsyncSession = Depends(get_session),
 ):
     """Record yes/no feedback for a run via GET (from email links)."""
-    _store_feedback(session, run_id, feedback)
+    await _store_feedback(session, run_id, feedback)
     return {"message": "Feedback recorded"}

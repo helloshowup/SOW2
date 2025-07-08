@@ -4,7 +4,7 @@ import sys
 from fastapi import FastAPI, Depends, HTTPException
 from redis import Redis
 from rq import Queue
-from sqlmodel import Session
+from sqlmodel.ext.asyncio.session import AsyncSession
 import structlog
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
@@ -54,7 +54,7 @@ async def trigger_run_agent() -> None:
 async def on_startup() -> None:
     """Initialize database and scheduler on startup."""
     setup_logging()
-    init_db()
+    await init_db()
     scheduler.add_job(
         trigger_run_agent,
         IntervalTrigger(minutes=settings.agent_run_interval_minutes),
@@ -86,14 +86,14 @@ async def health_check():
 
 
 @app.post("/run-agent")
-async def run_agent(session: Session = Depends(get_session)):
+async def run_agent(session: AsyncSession = Depends(get_session)):
     """Manually trigger an agent run and enqueue worker job."""
     log = structlog.get_logger()
     try:
         new_run = AgentRun(status="queued")
         session.add(new_run)
-        session.commit()
-        session.refresh(new_run)
+        await session.commit()
+        await session.refresh(new_run)
         task_queue.enqueue("app.worker.run_agent_logic", run_id=new_run.id)
         log.info("Agent run enqueued", run_id=new_run.id)
         return {"run_id": new_run.id}

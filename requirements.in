@@ -2,9 +2,10 @@ fastapi
 uvicorn[standard]
 sqlalchemy
 sqlmodel
-psycopg2-binary
+psycopg[binary]
 redis
 rq
+aiosqlite
 apscheduler
 httpx
 requests
