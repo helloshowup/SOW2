@@ -24,12 +24,6 @@ def _store_feedback(session: Session, run_id: int, feedback: str) -> None:
     session.commit()
     log.info("Feedback received", run_id=run_id, feedback=feedback)
 
-@router.get("/health")
-async def health_check():
-    """Simple health check endpoint."""
-    return {"status": "ok"}
-
-
 @router.post("/feedback")
 async def receive_feedback(payload: FeedbackPayload, session: Session = Depends(get_session)):
     """Record yes/no feedback for a run via POST."""
