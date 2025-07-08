@@ -1,0 +1,63 @@
+#!/bin/bash
+
+# Exit immediately if a command exits with a non-zero status.
+set -e
+
+echo "🚀 Starting Smoke Test..."
+
+# Set DRY_RUN to prevent actual emails and print them to logs instead
+export DRY_RUN="True"
+
+# 1. Start services in detached mode
+echo "▶️ Spinning up services with docker-compose..."
+docker-compose up -d --build
+
+# Wait for services to be healthy
+echo "⏳ Waiting for services to become healthy..."
+sleep 15 # Adjust sleep time if your services take longer to start
+
+# 2. Trigger the agent run
+echo "▶️ Triggering agent run via API..."
+docker-compose exec api curl -s -X POST http://localhost:8000/run-agent
+echo "✅ Agent run triggered."
+
+# 3. Verify worker processing
+echo "▶️ Verifying worker logs for successful job completion..."
+# Wait up to 60 seconds for the success message
+timeout 60s grep -q "Job completed" <(docker-compose logs -f worker)
+echo "✅ Worker successfully processed the job."
+
+# 4. Verify mock email was "sent" (printed to logs)
+echo "▶️ Verifying worker logs for mock email..."
+timeout 10s grep -q "--- START MOCK EMAIL ---" <(docker-compose logs -f worker)
+echo "✅ Mock email was successfully logged."
+
+# 5. Verify database record for the agent run
+echo "▶️ Verifying database for new AgentRun record..."
+RUN_ID=$(docker-compose exec -T db psql -U user -d agent_db -t -c "SELECT id FROM agentrun ORDER BY created_at DESC LIMIT 1;")
+if [ -z "$RUN_ID" ]; then
+    echo "❌ ERROR: No AgentRun record found in the database."
+    exit 1
+fi
+echo "✅ AgentRun record found with ID: $RUN_ID"
+
+# 6. Test the feedback endpoints
+echo "▶️ Testing 'like' feedback endpoint..."
+docker-compose exec api curl -s http://localhost:8000/feedback?run_id=${RUN_ID}&score=1 > /dev/null
+echo "▶️ Testing 'dislike' feedback endpoint..."
+docker-compose exec api curl -s http://localhost:8000/feedback?run_id=${RUN_ID}&score=0 > /dev/null
+
+# 7. Verify feedback was recorded in the database
+echo "▶️ Verifying database for new Feedback records..."
+FEEDBACK_COUNT=$(docker-compose exec -T db psql -U user -d agent_db -t -c "SELECT COUNT(*) FROM feedback WHERE agent_run_id = ${RUN_ID};")
+if [ "${FEEDBACK_COUNT//[[:space:]]/}" != "2" ]; then
+    echo "❌ ERROR: Did not find 2 feedback records for the run."
+    exit 1
+fi
+echo "✅ Feedback records successfully created."
+
+echo "🎉 Smoke Test Passed Successfully!"
+
+# 8. Clean up
+echo "▶️ Shutting down services..."
+docker-compose down
