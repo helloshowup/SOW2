@@ -275,10 +275,10 @@ This epic focuses on transforming the AI from a general-purpose text analyzer in
 
 **TODOs:**
 
-* \[ \] **Update `brand_repo.yaml` Structure:** Add two new top-level keys to `dev-research/brand_repo.yaml`: `brand_health_examples` and `market_intel_examples`.  
-* \[ \] **Populate Brand Health Examples:** Under `brand_health_examples`, add 2-3 examples. Each example should have an `input` (a sample text about customer service, product quality, etc.) and an `output` (the ideal JSON analysis focusing on brand health metrics).  
-* \[ \] **Populate Market Intelligence Examples:** Under `market_intel_examples`, add 2-3 examples. Each example should have an `input` (a sample text about a competitor's move, a new technology, etc.) and an `output` (the ideal JSON analysis focusing on market trends and opportunities).  
-* \[ \] **Crucial Validation Step:** For each example you create, manually copy the `output` JSON and validate it against the `AnalysisResult` Pydantic model from Part I. This ensures the examples are perfectly aligned with the schema, preventing model confusion.
+* \[x] **Update `brand_repo.yaml` Structure:** Add two new top-level keys to `dev-research/brand_repo.yaml`: `brand_health_examples` and `market_intel_examples`.  
+* \[x] **Populate Brand Health Examples:** Under `brand_health_examples`, add 2-3 examples. Each example should have an `input` (a sample text about customer service, product quality, etc.) and an `output` (the ideal JSON analysis focusing on brand health metrics).  
+* \[x] **Populate Market Intelligence Examples:** Under `market_intel_examples`, add 2-3 examples. Each example should have an `input` (a sample text about a competitor's move, a new technology, etc.) and an `output` (the ideal JSON analysis focusing on market trends and opportunities).  
+* \[x] **Crucial Validation Step:** For each example you create, manually copy the `output` JSON and validate it against the `AnalysisResult` Pydantic model from Part I. This ensures the examples are perfectly aligned with the schema, preventing model confusion.
 
 ##### User Story 2: Implement a Dynamic, Task-Aware Prompt Engine (Estimated Time: 45 minutes)
 
@@ -292,12 +292,12 @@ This epic focuses on transforming the AI from a general-purpose text analyzer in
 
 **TODOs:**
 
-* \[ \] **Create Prompt Construction Logic:** In `app/openai_evaluator.py`, create a new helper function, `_construct_prompt_messages(task_type: str, brand_config: dict, user_input: str) -> list`.  
-* \[ \] **Develop System Message Templates:** Inside the new function, create two distinct system message strings: one for `brand_health` and one for `market_intelligence`. These messages should define the AI's expert persona for that task.  
-* \[ \] **Implement Example Injection:** Write logic to select the correct list of examples (`brand_health_examples` or `market_intel_examples`) from the `brand_config` based on the `task_type`.  
-* \[ \] **Format Few-Shot Messages:** Loop through the selected examples. For each example, append two messages to your list: one with `role: "user"` and `content: example['input']`, and another with `role: "assistant"` and `content: example['output']`.  
-* \[ \] **Assemble Final Message History:** The `_construct_prompt_messages` function should return a complete list of messages, starting with the system message, followed by the alternating user/assistant examples, and ending with the final user message containing the `user_input`.  
-* \[ \] **Integrate into `evaluate_content`:** Refactor the main `evaluate_content` function. Remove the old static prompt string and instead call your new `_construct_prompt_messages` helper. Pass the returned message list to the `messages` parameter of the `client.chat.completions.create` call.
+* \[x] **Create Prompt Construction Logic:** In `app/openai_evaluator.py`, create a new helper function, `_construct_prompt_messages(task_type: str, brand_config: dict, user_input: str) -> list`.
+* \[x] **Develop System Message Templates:** Inside the new function, create two distinct system message strings: one for `brand_health` and one for `market_intelligence`. These messages should define the AI's expert persona for that task.
+* \[x] **Implement Example Injection:** Write logic to select the correct list of examples (`brand_health_examples` or `market_intel_examples`) from the `brand_config` based on the `task_type`.
+* \[x] **Format Few-Shot Messages:** Loop through the selected examples. For each example, append two messages to your list: one with `role: "user"` and `content: example['input']`, and another with `role: "assistant"` and `content: example['output']`.
+* \[x] **Assemble Final Message History:** The `_construct_prompt_messages` function should return a complete list of messages, starting with the system message, followed by the alternating user/assistant examples, and ending with the final user message containing the `user_input`.
+* \[x] **Integrate into `evaluate_content`:** Refactor the main `evaluate_content` function. Remove the old static prompt string and instead call your new `_construct_prompt_messages` helper. Pass the returned message list to the `messages` parameter of the `client.chat.completions.create` call.
 
 
 ### Sprint Plan: Part III \- Performance, Speed, and Cost-Efficiency
