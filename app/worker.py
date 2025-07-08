@@ -74,39 +74,49 @@ def run_agent_logic(run_id: int, search_request: dict | None = None) -> None:
     brand_evals: list[dict] = []
     market_evals: list[dict] = []
 
-    def crawl_and_evaluate(queries: list[str], task_type: str) -> None:
-        pages = scraper.crawl(queries)
+    async def process_batch(pages: list[dict], task_type: str) -> list[dict]:
+        """Evaluate many pages concurrently and return result dicts."""
+        tasks = []
+        valid_pages = []
         for page in pages:
-            if not page.get("text"):
-                continue
-            result = asyncio.run(
-                evaluate_content(page["text"], brand_config, task_type)
-            )
-            if result:
-                result_dict = result.model_dump()
+            if page.get("text"):
+                valid_pages.append(page)
+                tasks.append(evaluate_content(page["text"], brand_config, task_type))
+
+        results = await asyncio.gather(*tasks)
+        processed: list[dict] = []
+        for page, res in zip(valid_pages, results):
+            if res:
+                result_dict = res.model_dump()
                 result_dict["url"] = page.get("url")
-                if task_type == "market_intelligence":
-                    market_evals.append(result_dict)
-                else:
-                    brand_evals.append(result_dict)
+                processed.append(result_dict)
+        return processed
+
+    brand_pages: list[dict] = []
+    market_pages: list[dict] = []
 
     if search_request:
         brand_queries = search_request.get("brand_health_queries") or []
         if brand_queries:
             log.info("Starting Brand Health analysis", queries=brand_queries)
-            crawl_and_evaluate(brand_queries, "brand_health")
+            brand_pages = scraper.crawl(brand_queries)
 
         market_queries = search_request.get("market_intelligence_queries") or []
         if market_queries:
             log.info("Starting Market Intelligence analysis", queries=market_queries)
-            crawl_and_evaluate(market_queries, "market_intelligence")
+            market_pages = scraper.crawl(market_queries)
 
         if not brand_queries and not market_queries:
             search_terms = generate_search_terms(keywords)
-            crawl_and_evaluate(search_terms, "brand_health")
+            brand_pages = scraper.crawl(search_terms)
     else:
         search_terms = generate_search_terms(keywords)
-        crawl_and_evaluate(search_terms, "brand_health")
+        brand_pages = scraper.crawl(search_terms)
+
+    if brand_pages:
+        brand_evals = asyncio.run(process_batch(brand_pages, "brand_health"))
+    if market_pages:
+        market_evals = asyncio.run(process_batch(market_pages, "market_intelligence"))
 
     # store completed results
     with Session(engine) as session:
