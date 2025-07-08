@@ -37,7 +37,7 @@ An automated backend for running AI agents on a schedule. It scrapes the web usi
 
 ## Configuration
 
-All configuration values are read from environment variables. See `.env.example` for reference. Typical variables include `DATABASE_URL`, `LOG_LEVEL`, `REDIS_URL`, `AGENT_RUN_INTERVAL_MINUTES`, and `OPENAI_API_KEY` for the scheduler frequency and API access. To customize scraping queries, copy `search_config.json.example` to `search_config.json` and adjust the `brand_health_queries` and `market_intelligence_queries` lists.
+ All configuration values are read from environment variables. See `.env.example` for reference. Typical variables include `DATABASE_URL`, `LOG_LEVEL`, `REDIS_URL`, `AGENT_RUN_INTERVAL_MINUTES`, and `OPENAI_API_KEY` for the scheduler frequency and API access. To customize scraping queries, copy `search_config.json.example` to `search_config.json` and adjust the `brand_health_queries` and `market_intelligence_queries` lists. When present, this file is automatically loaded by the worker to override dynamically generated search terms.
 
 ## Architecture
 
