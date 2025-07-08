@@ -2,23 +2,13 @@ from redis import Redis
 from rq import Worker, Queue
 
 import asyncio
-import os
 import json
 import logging
-from datetime import datetime
-from sqlmodel.ext.asyncio.session import AsyncSession
 
 from .config import get_settings
-from .email_sender import EmailSender
-from .scraper import (
-    SimpleScraper,
-    load_brand_keywords,
-    generate_search_terms,
-)
-from .brand_parser import load_brand_config
+from .database import engine
+from .agent import run_agent_iteration
 from .openai_evaluator import evaluate_content
-from .database import engine, async_session
-from .models import AgentRun
 import structlog
 
 # Configure logging for better visibility
@@ -47,111 +37,9 @@ def load_search_config(config_path: str = "search_config.json") -> dict | None:
 
 
 def run_agent_logic(run_id: int, search_request: dict | None = None) -> None:
-    """Scrape the web, evaluate content, store results, and send an email.
-
-    If ``search_request`` is provided, it should contain ``brand_health_queries``
-    and ``market_intelligence_queries`` lists which will be used instead of the
-    default keyword-generated search terms.
-    """
+    """Execute the agent iteration synchronously for RQ."""
     log.info("Executing agent logic", run_id=run_id)
-
-    # mark run as running
-    async def mark_running() -> bool:
-        async with async_session() as session:
-            run = await session.get(AgentRun, run_id)
-            if not run:
-                log.error("AgentRun not found", run_id=run_id)
-                return False
-            run.status = "running"
-            session.add(run)
-            await session.commit()
-            return True
-
-    if not asyncio.run(mark_running()):
-        return
-
-    brand_id = os.getenv("BRAND_ID", "debonairs")
-    brand_config = load_brand_config(brand_id) or {}
-    keywords = load_brand_keywords(brand_id)
-
-    scraper = SimpleScraper()
-
-    brand_evals: list[dict] = []
-    market_evals: list[dict] = []
-
-    async def process_batch(pages: list[dict], task_type: str) -> list[dict]:
-        """Evaluate many pages concurrently and return result dicts."""
-        tasks = []
-        valid_pages = []
-        for page in pages:
-            if page.get("text"):
-                valid_pages.append(page)
-                tasks.append(evaluate_content(page["text"], brand_config, task_type))
-
-        results = await asyncio.gather(*tasks)
-        processed: list[dict] = []
-        for page, res in zip(valid_pages, results):
-            if res:
-                result_dict = res.model_dump()
-                result_dict["url"] = page.get("url")
-                processed.append(result_dict)
-        return processed
-
-    brand_pages: list[dict] = []
-    market_pages: list[dict] = []
-
-    if search_request:
-        brand_queries = search_request.get("brand_health_queries") or []
-        if brand_queries:
-            log.info("Starting Brand Health analysis", queries=brand_queries)
-            brand_pages = scraper.crawl(brand_queries)
-
-        market_queries = search_request.get("market_intelligence_queries") or []
-        if market_queries:
-            log.info("Starting Market Intelligence analysis", queries=market_queries)
-            market_pages = scraper.crawl(market_queries)
-
-        if not brand_queries and not market_queries:
-            search_terms = generate_search_terms(keywords)
-            brand_pages = scraper.crawl(search_terms)
-    else:
-        search_terms = generate_search_terms(keywords)
-        brand_pages = scraper.crawl(search_terms)
-
-    if brand_pages:
-        brand_evals = asyncio.run(process_batch(brand_pages, "brand_health"))
-    if market_pages:
-        market_evals = asyncio.run(process_batch(market_pages, "market_intelligence"))
-
-    # store completed results
-    async def mark_complete() -> None:
-        async with async_session() as session:
-            run = await session.get(AgentRun, run_id)
-            if run:
-                run.status = "completed"
-                run.completed_at = datetime.utcnow()
-                run.result = {
-                    "brand_health": brand_evals,
-                    "market_intelligence": market_evals,
-                }
-                session.add(run)
-                await session.commit()
-
-    asyncio.run(mark_complete())
-
-    # prepare simple summary for email
-    brand_top = [
-        {"item": ev.get("summary", ev.get("url", "")), "score": 1.0}
-        for ev in brand_evals[:5]
-    ]
-    market_top = [
-        {"item": ev.get("summary", ev.get("url", "")), "score": 1.0}
-        for ev in market_evals[:5]
-    ]
-    EmailSender().send_summary_email(
-        {"brand_health": brand_top, "market_intelligence": market_top},
-        run_id,
-    )
+    asyncio.run(run_agent_iteration(run_id, search_request))
 
 
 def run_worker() -> None:
