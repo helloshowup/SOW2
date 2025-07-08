@@ -1,14 +1,28 @@
 import sys
-from os.path import abspath, dirname
-sys.path.insert(0, dirname(dirname(abspath(__file__))))
+from os.path import abspath, dirname, join
+import importlib.util
+
+repo_root = dirname(dirname(abspath(__file__)))
+sys.path.insert(0, repo_root)
 # The line "from logging.config import fileConfig" has been removed.
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
+from sqlalchemy import engine_from_config, pool
 
 from alembic import context
 from sqlmodel import SQLModel
-from app.config import get_settings
+
+spec = importlib.util.spec_from_file_location(
+    "app.config", join(repo_root, "app", "config.py")
+)
+config_module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(config_module)
+get_settings = config_module.get_settings
+
+models_spec = importlib.util.spec_from_file_location(
+    "app.models", join(repo_root, "app", "models.py")
+)
+models_module = importlib.util.module_from_spec(models_spec)
+models_spec.loader.exec_module(models_module)
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

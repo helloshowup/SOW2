@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date
 from typing import List, Literal, Optional
 
 from sqlalchemy import Column
@@ -24,6 +24,15 @@ class Feedback(SQLModel, table=True):
     run_id: int = Field(foreign_key="agentrun.id")
     value: str
     submitted_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
+
+
+class VisitedUrl(SQLModel, table=True):
+    """Record of URLs that have been visited."""
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    url: str = Field(unique=True, index=True, max_length=2048)
+    domain: str = Field(index=True, max_length=255)
+    last_visited_date: date = Field(default_factory=date.today, index=True)
 
 
 class SentimentAnalysis(BaseModel):
