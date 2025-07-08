@@ -63,11 +63,15 @@ async def run_agent_iteration(run_id: int, search_request: dict | None = None) -
         )
 
         brand_queries: List[str] = []
-        market_queries: List[str] = (
+        market_phrase_list: List[str] = (
             search_request.get("market_intelligence_queries", [])
             if search_request
             else []
         )
+        rotating_phrases: List[str] = (
+            search_request.get("rotating_search_phrases", []) if search_request else []
+        )
+        market_queries: List[str] = []
 
         custom_query_phrases = None
         if search_request:
@@ -92,6 +96,26 @@ async def run_agent_iteration(run_id: int, search_request: dict | None = None) -
                 log.info(
                     "Generated custom queries from search_config.json",
                     num_queries=len(brand_queries),
+                )
+
+        if market_phrase_list and keywords:
+            sampled_keywords = random.sample(
+                keywords, min(max_generated_terms, len(keywords))
+            )
+            combined_phrases = market_phrase_list + rotating_phrases
+            generated_market_queries: List[str] = []
+            for kw in sampled_keywords:
+                for phrase in combined_phrases:
+                    generated_market_queries.append(f"{kw} {phrase}")
+                    if len(generated_market_queries) >= max_generated_terms:
+                        break
+                if len(generated_market_queries) >= max_generated_terms:
+                    break
+            if generated_market_queries:
+                market_queries = generated_market_queries
+                log.info(
+                    "Generated market intelligence queries from search_config.json",
+                    num_queries=len(market_queries),
                 )
 
         defaults_used = False
