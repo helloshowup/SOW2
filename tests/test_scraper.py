@@ -1,5 +1,8 @@
+import os
 import pytest
 
+os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite://")
+os.environ.setdefault("OPENAI_API_KEY", "test")
 from app import scraper
 
 
@@ -18,34 +21,40 @@ def test_load_brand_keywords():
     assert 'interactive' in keywords
 
 
-def test_simple_scraper_search_and_scrape(monkeypatch):
-    sample_search_html = (
-        '<a class="result__a" href="http://example.com/1">One</a>'
-        '<a class="result__a" href="http://example.com/2">Two</a>'
-    )
-    sample_page_html = '<p>Hello</p><p>World</p>'
+def test_simple_scraper_search_and_crawl(monkeypatch):
+    class Dummy:
+        def __init__(self, url, title, description):
+            self.url = url
+            self.title = title
+            self.description = description
+
+    def fake_search(term, num_results=10, advanced=False, **kwargs):
+        assert term == 'test'
+        return [
+            Dummy('http://example.com/1', 'T1', 'Hello'),
+            Dummy('http://example.com/2', 'T2', 'World'),
+        ]
+
+    monkeypatch.setattr(scraper, 'google_search', fake_search)
 
     s = scraper.SimpleScraper()
 
-    def fake_get(url):
-        if 'duckduckgo' in url:
-            return sample_search_html
-        return sample_page_html
+    results = s.search('test', max_results=2)
+    assert results == [
+        {
+            'url': 'http://example.com/1',
+            'snippet': 'Hello',
+            'source_title': 'T1',
+            'publication_time': None,
+        },
+        {
+            'url': 'http://example.com/2',
+            'snippet': 'World',
+            'source_title': 'T2',
+            'publication_time': None,
+        },
+    ]
 
-    monkeypatch.setattr(s, '_get', lambda url: fake_get(url))
+    pages = s.crawl(['test'], max_results=2)
+    assert pages == results
 
-    links = s.search('test', max_results=2)
-    assert links == ['http://example.com/1', 'http://example.com/2']
-
-    text = s.scrape_page('http://example.com/1')
-    assert text == 'Hello\nWorld'
-
-
-def test_simple_scraper_redirect_resolution(monkeypatch):
-    html = '<a class="result__a" href="/l/?uddg=http%3A%2F%2Fexample.com">Link</a>'
-    s = scraper.SimpleScraper()
-
-    monkeypatch.setattr(s, '_get', lambda url: html)
-
-    links = s.search('test', max_results=1)
-    assert links == ['http://example.com']

@@ -1,5 +1,9 @@
+import os
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+
+os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite://")
+os.environ.setdefault("OPENAI_API_KEY", "test")
 import asyncio
 from sqlmodel import SQLModel, select
 from sqlalchemy.ext.asyncio import (
@@ -92,3 +96,4 @@ def test_receive_feedback_get():
     fb = asyncio.run(fetch_fb2())
     assert fb is not None
     assert fb.value == "no"
+

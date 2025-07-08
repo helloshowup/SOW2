@@ -1,5 +1,8 @@
 import json
 import os
+
+os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite://")
+os.environ.setdefault("OPENAI_API_KEY", "test")
 import app.worker as worker
 
 
@@ -24,4 +27,5 @@ def test_run_agent_logic_loads_search_config(tmp_path, monkeypatch):
 
     assert captured["run_id"] == 1
     assert captured["search_request"] == config
+
 

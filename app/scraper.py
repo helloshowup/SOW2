@@ -3,9 +3,7 @@ import random
 from dataclasses import dataclass
 from typing import Iterable
 
-import requests
-from bs4 import BeautifulSoup
-import urllib.parse
+from googlesearch import search as google_search
 import yaml
 import structlog
 
@@ -53,56 +51,38 @@ def generate_search_terms(keywords: list[str], max_terms: int = 5) -> list[str]:
 
 
 class SimpleScraper:
-    """Very small utility class for basic web searching and scraping."""
+    """Utility class that surfaces Google SERP snippets for given queries."""
 
-    def __init__(self) -> None:
-        self.session = requests.Session()
+    def __init__(self) -> None:  # pragma: no cover - trivial initializer
+        pass
 
-    def _get(self, url: str) -> str:
-        response = self.session.get(url, timeout=10)
-        response.raise_for_status()
-        return response.text
+    def search(self, term: str, max_results: int = 5) -> list[dict]:
+        """Search Google and return structured results with snippets."""
+        log.info("Searching Google for term", term=term)
+        try:
+            raw_results = list(
+                google_search(term, num_results=max_results, advanced=True)
+            )
+        except Exception as exc:  # pragma: no cover - network failures
+            log.error("Google search failed", term=term, error=str(exc))
+            return []
 
-    def search(self, term: str, max_results: int = 5) -> list[str]:
-        """Return a list of result URLs from DuckDuckGo HTML search."""
-        query = requests.utils.quote(term)
-        html = self._get(f"https://duckduckgo.com/html/?q={query}")
-        soup = BeautifulSoup(html, "html.parser")
-        links: list[str] = []
-        for a in soup.select("a.result__a"):
-            href = a.get("href")
-            if not href:
-                continue
-
-            if href.startswith("//"):
-                href = "https:" + href
-
-            resolved = urllib.parse.urljoin("https://duckduckgo.com", href)
-            parsed = urllib.parse.urlparse(resolved)
-
-            if parsed.netloc.endswith("duckduckgo.com") and parsed.path.startswith("/l/"):
-                qs = urllib.parse.parse_qs(parsed.query)
-                uddg = qs.get("uddg")
-                if uddg:
-                    resolved = urllib.parse.unquote(uddg[0])
-
-            links.append(resolved)
-            if len(links) >= max_results:
-                break
-        return links
-
-    def scrape_page(self, url: str) -> str:
-        """Fetch a page and return all paragraph text separated by newlines."""
-        html = self._get(url)
-        soup = BeautifulSoup(html, "html.parser")
-        texts = [p.get_text(strip=True) for p in soup.find_all("p")]
-        return "\n".join(texts)
+        results = []
+        for res in raw_results:
+            results.append(
+                {
+                    "url": getattr(res, "url", ""),
+                    "snippet": getattr(res, "description", ""),
+                    "source_title": getattr(res, "title", ""),
+                    "publication_time": getattr(res, "publication_date", None),
+                }
+            )
+        return results
 
     def crawl(self, terms: Iterable[str], max_results: int = 5) -> list[dict]:
-        """Search for each term and yield scraped text dictionaries."""
+        """Return SERP snippet dictionaries for each provided term."""
         pages: list[dict] = []
         for term in terms:
-            for link in self.search(term, max_results=max_results):
-                text = self.scrape_page(link)
-                pages.append({"url": link, "text": text})
+            for page_data in self.search(term, max_results=max_results):
+                pages.append(page_data)
         return pages

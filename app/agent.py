@@ -20,9 +20,11 @@ async def _process_batch(pages: List[Dict[str, Any]], brand_config: Dict[str, An
     tasks = []
     valid_pages = []
     for page in pages:
-        if page.get("text"):
+        if page.get("snippet"):
             valid_pages.append(page)
-            tasks.append(worker.evaluate_content(page["text"], brand_config, task_type))
+            tasks.append(
+                worker.evaluate_content(page["snippet"], brand_config, task_type)
+            )
     results = await asyncio.gather(*tasks)
     processed: List[Dict[str, Any]] = []
     for page, res in zip(valid_pages, results):
@@ -90,15 +92,15 @@ async def run_agent_iteration(run_id: int, search_request: dict | None = None) -
         all_pages = brand_pages + market_pages
         all_evals = brand_evals + market_evals
         for page, res in zip(all_pages, all_evals):
-            text = page.get("text", "").lower()
+            snippet = page.get("snippet", "").lower()
             url = page.get("url")
-            if any(term in text for term in brand_terms):
+            if any(term in snippet for term in brand_terms):
                 on_brand_specific_links.append(url)
             else:
                 brand_relevant_links.append(url)
 
         content_summaries = [ev.get("summary", "") for ev in all_evals]
-        user_prompt = all_pages[0]["text"] if all_pages else ""
+        user_prompt = all_pages[0]["snippet"] if all_pages else ""
         brand_system_prompt = _construct_prompt_messages("brand_health", brand_config, "")[0]["content"]
         market_system_prompt = _construct_prompt_messages("market_intelligence", brand_config, "")[0]["content"]
 
