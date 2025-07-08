@@ -83,11 +83,12 @@ def run_agent_logic(run_id: int, search_request: dict | None = None) -> None:
                 evaluate_content(page["text"], brand_config, task_type)
             )
             if result:
-                result["url"] = page.get("url")
+                result_dict = result.model_dump()
+                result_dict["url"] = page.get("url")
                 if task_type == "market_intelligence":
-                    market_evals.append(result)
+                    market_evals.append(result_dict)
                 else:
-                    brand_evals.append(result)
+                    brand_evals.append(result_dict)
 
     if search_request:
         brand_queries = search_request.get("brand_health_queries") or []

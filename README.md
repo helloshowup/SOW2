@@ -192,6 +192,161 @@ To-Do List:
 - [x] Re-format the email body to present the findings under two distinct, clear headings: Brand Health Report and Market Intelligence Briefing.
 5. Update Project Documentation
 - [x] Revise the main project description to reflect its enhanced capabilities as a market intelligence tool.
+ 
+### **Sprint Plan: Implementing a Robust, Structured Data Pipeline**
+
+**Sprint Goal:** To transition the application's core AI interaction from a brittle, manual JSON parsing method to a production-grade, schema-enforced data validation pipeline. This will eliminate data-related runtime errors and significantly increase the reliability of the analysis service.
+
+ **Epic: Guaranteeing Structured Data**
+
+This epic covers all work required to ensure the data received from the OpenAI API is syntactically correct, semantically valid, and resilient to common LLM failures.
+
+### **User Story 1: Define the Data Contract (Estimated Time: 30 minutes)**
+
+**As a developer,** I want to define a canonical Pydantic schema for the AI's analysis output, **so that** there is a single, unambiguous source of truth for the data structure that the entire application can rely on.
+
+**Acceptance Criteria:**
+* A new `AnalysisResult` Pydantic model exists.  
+* The model includes nested structures for sentiment and entities.  
+* All fields are correctly typed and include descriptions.
+
+**TODOs:**
+* [x] **Create `AnalysisResult` Schema:** In `app/models.py`, define a new Pydantic `BaseModel` named `AnalysisResult`.
+* [x] **Define Nested `SentimentAnalysis` Model:** Inside `app/models.py`, create a nested `SentimentAnalysis` model with fields for `overall_sentiment` (using `Literal`) and `score` (`float`).
+* [x] **Define Nested `Entity` Model:** Inside `app/models.py`, create a nested `Entity` model with fields for `name` (`str`) and `type` (`str`).
+* [x] **Assemble Final Schema:** The `AnalysisResult` model should include fields for `summary` (`str`), `sentiment` (`SentimentAnalysis`), and `entities` (`List[Entity]`).
+* [x] **Add Docstrings:** Ensure all models and fields have clear, descriptive docstrings as recommended in the research.
+
+### **User Story 2: Enforce the Data Contract (Estimated Time: 1.5 hours)**
+
+**As a developer,** I want to replace the manual `json.loads` with a schema-enforcing library, **so that** the application is resilient to malformed or incomplete AI responses and returns validated objects instead of raw strings.
+
+**Acceptance Criteria:**
+
+* The `instructor` library is added as a dependency.  
+* The `openai_evaluator.py` module is refactored to use `instructor`.  
+* The `evaluate_content` function returns a validated `AnalysisResult` Pydantic object, not a dictionary.
+
+**TODOs:**
+
+* [x] **Add Dependency:** Add `instructor` to the project's dependencies (e.g., in a `requirements.txt` file).
+* [x] **Patch OpenAI Client:** In `app/openai_evaluator.py`, import `instructor` and refactor the client initialization to use `instructor.from_openai(OpenAI())`.
+* [x] **Refactor `evaluate_content`:**
+  * Remove the `try...except json.JSONDecodeError` block.  
+  * Remove the `response_format={"type": "json_object"}` parameter, as `instructor` handles this.  
+  * Add the `response_model=AnalysisResult` parameter to the `client.chat.completions.create` call.  
+  * Update the function's return type hint to `-> AnalysisResult`.
+* [x] **Update Worker Logic:** In `app/worker.py`, modify the call to `evaluate_content` to handle the returned Pydantic object directly (e.g., using `result.model_dump_json()` if a JSON string is needed downstream).
+
+### **User Story 3: Implement Intelligent Error Handling (Estimated Time: 30 minutes)**
+
+**As a developer,** I want the system to automatically retry API calls that fail validation, **so that** it can self-correct from common LLM hallucinations or formatting errors without manual intervention.
+
+**Acceptance Criteria:**
+
+* The API call is configured to retry on validation failure.  
+* A log message is generated when a retry occurs.
+
+**TODOs:**
+* [x] **Enable Automatic Retries:** In `app/openai_evaluator.py`, add the `max_retries=2` parameter to the `client.chat.completions.create` call.
+* [x] **Add Logging:** Implement basic logging within `evaluate_content` to capture and report when `instructor` performs a retry, which can be useful for monitoring the LLM's consistency.
+* [x] **(Stretch Goal) Implement Final Safety Net:** For maximum robustness, create the `repair_json_with_llm` function from the research document and add it as a final `except` block to handle cases where even retries fail.
+
+### Sprint Plan: Part II \- Dynamic Context and Few-Shot Prompting
+
+**Prerequisite:** Completion of "Part I: Structured & Validated JSON Output" Sprint.
+
+**Sprint Goal:** To significantly improve the quality and relevance of the AI's analysis by engineering a dynamic prompting system. This system will use context-rich, few-shot examples tailored to the specific analysis task, moving from generic instructions to guided, expert-level reasoning.
+
+**Timeline:** 1.5 Hours
+
+#### Epic: Elevating Analytical Intelligence
+
+This epic focuses on transforming the AI from a general-purpose text analyzer into a specialized, context-aware engine that understands the distinct nuances of "Brand Health" versus "Market Intelligence."
+
+##### User Story 1: Enrich the Configuration with Actionable Examples (Estimated Time: 45 minutes)
+
+**As a developer,** I want to augment the `brand_repo.yaml` file to include structured, task-specific examples, **so that** I can provide the AI with a clear, validated blueprint of the expected analysis for different scenarios.
+
+**Acceptance Criteria:**
+
+* The `brand_repo.yaml` file contains new sections for task-specific examples.  
+* All examples are structured and their outputs validate against the `AnalysisResult` schema.
+
+**TODOs:**
+
+* \[ \] **Update `brand_repo.yaml` Structure:** Add two new top-level keys to `dev-research/brand_repo.yaml`: `brand_health_examples` and `market_intel_examples`.  
+* \[ \] **Populate Brand Health Examples:** Under `brand_health_examples`, add 2-3 examples. Each example should have an `input` (a sample text about customer service, product quality, etc.) and an `output` (the ideal JSON analysis focusing on brand health metrics).  
+* \[ \] **Populate Market Intelligence Examples:** Under `market_intel_examples`, add 2-3 examples. Each example should have an `input` (a sample text about a competitor's move, a new technology, etc.) and an `output` (the ideal JSON analysis focusing on market trends and opportunities).  
+* \[ \] **Crucial Validation Step:** For each example you create, manually copy the `output` JSON and validate it against the `AnalysisResult` Pydantic model from Part I. This ensures the examples are perfectly aligned with the schema, preventing model confusion.
+
+##### User Story 2: Implement a Dynamic, Task-Aware Prompt Engine (Estimated Time: 45 minutes)
+
+**As a developer,** I want to dynamically construct a sophisticated prompt using the new few-shot examples, **so that** the AI's analysis is precisely and automatically tailored to the specific task (`brand_health` or `market_intelligence`).
+
+**Acceptance Criteria:**
+
+* A new prompt-building function exists that assembles a multi-part message history.  
+* The `evaluate_content` function uses this new dynamic prompt.  
+* The final prompt sent to the API includes a system role, few-shot examples, and the user query.
+
+**TODOs:**
+
+* \[ \] **Create Prompt Construction Logic:** In `app/openai_evaluator.py`, create a new helper function, `_construct_prompt_messages(task_type: str, brand_config: dict, user_input: str) -> list`.  
+* \[ \] **Develop System Message Templates:** Inside the new function, create two distinct system message strings: one for `brand_health` and one for `market_intelligence`. These messages should define the AI's expert persona for that task.  
+* \[ \] **Implement Example Injection:** Write logic to select the correct list of examples (`brand_health_examples` or `market_intel_examples`) from the `brand_config` based on the `task_type`.  
+* \[ \] **Format Few-Shot Messages:** Loop through the selected examples. For each example, append two messages to your list: one with `role: "user"` and `content: example['input']`, and another with `role: "assistant"` and `content: example['output']`.  
+* \[ \] **Assemble Final Message History:** The `_construct_prompt_messages` function should return a complete list of messages, starting with the system message, followed by the alternating user/assistant examples, and ending with the final user message containing the `user_input`.  
+* \[ \] **Integrate into `evaluate_content`:** Refactor the main `evaluate_content` function. Remove the old static prompt string and instead call your new `_construct_prompt_messages` helper. Pass the returned message list to the `messages` parameter of the `client.chat.completions.create` call.
+
+
+### Sprint Plan: Part III \- Performance, Speed, and Cost-Efficiency
+
+**Prerequisites:** Completion of "Part I" and "Part II" Sprints.
+
+**Sprint Goal:** To architect a high-performance, cost-effective processing pipeline by implementing parallel processing, intelligent model selection, and caching. This will ensure the application is fast, scalable, and ready for a live demonstration.
+
+**Timeline:** 1 Hour
+
+#### Epic: Building a High-Throughput, Cost-Effective Analysis Engine
+
+This epic covers the final but critical steps to transform the application from a functional prototype into a performant and efficient service.
+
+##### User Story 1: Implement Parallel Processing for Maximum Throughput (Estimated Time: 30 minutes)
+
+**As a developer,** I want to refactor the sequential processing loop to handle all API calls in parallel, **so that** the total processing time for a batch of texts is determined by the longest single request, not the sum of all requests.
+
+**Acceptance Criteria:**
+
+* The worker no longer processes items one by one in a loop.  
+* `asyncio.gather` is used to execute all API calls concurrently.  
+* The application's overall latency for multiple items is significantly reduced.
+
+**TODOs:**
+
+* \[ \] **Refactor Worker Logic:** In `app/worker.py`, modify the `run_agent_logic` function. Instead of looping and calling `evaluate_content` for each item, first collect all texts into a list.  
+* \[ \] **Create a Batch Processing Entrypoint:** Create a new asynchronous function, `process_batch(texts: list)`, that will manage the concurrent execution.  
+* \[ \] **Implement `asyncio.gather`:** Inside `process_batch`, create a list of awaitable tasks by calling `evaluate_content` for each text. Use `await asyncio.gather(*tasks)` to run them all in parallel.  
+* \[ \] **Update Main Loop:** The main logic in `run_agent_logic` should now call `asyncio.run(process_batch(all_texts))`.
+
+### User Story 2: Optimize for Speed and Cost with Smart Defaults (Estimated Time: 30 minutes)
+
+**As a developer,** I want to switch to a more efficient language model and implement a basic caching layer, **so that** the application benefits from faster response times, lower operational costs, and avoids redundant API calls.
+
+**Acceptance Criteria:**
+
+* The default OpenAI model is updated to the recommended version.  
+* A caching mechanism is in place to prevent re-processing of identical content.  
+* The cache is demonstrably hit on subsequent identical requests.
+
+**TODOs:**
+
+* \[ \] **Update Default Model:** In `app/openai_evaluator.py`, change the `model` parameter in the `client.chat.completions.create` call from `"gpt-3.5-turbo-0125"` to the faster and more cost-effective `"gpt-4o-mini"`.  
+* \[ \] **Implement In-Memory Cache:** Create a simple decorator-based cache. You can use Python's built-in `functools.lru_cache` for this, as it's perfect for a single-process proof of concept.  
+* \[ \] **Apply Cache Decorator:** Apply the `@lru_cache(maxsize=128)` decorator to the primary processing function (`evaluate_content`) in `app/openai_evaluator.py`. This will automatically cache results based on the function's arguments.  
+* \[ \] **Add Logging for Cache Hits:** (Optional but recommended) Add a log message to show when a result is being served from the cache versus a live API call to make it clear during the demo that the optimization is working.
+
+
 
 ## General TODOs
 - [x] Initialize FastAPI project structure (`app/main.py`, `app/routes.py`).
