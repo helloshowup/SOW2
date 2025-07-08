@@ -1,15 +1,15 @@
 {
   "brand_health_queries": [
-    "YourBrand review",
-    "YourBrand customer feedback",
-    "YourBrand vs Competitor",
+    "review",
+    "feedback",
+    "vs Competitor",
     "best deals YourBrand"
   ],
   "market_intelligence_queries": [
-    "industry trends 2024",
-    "emerging competitor strategies",
-    "new technology in [industry]",
-    "impact of regulation on [industry]"
+    "trends 2025",
+    "emerging competitor ",
+    "new technology",
+    "impact of regulation"
   ]
 }
 
