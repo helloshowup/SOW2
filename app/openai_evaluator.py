@@ -17,8 +17,16 @@ if not OPENAI_API_KEY:
 
 openai.api_key = OPENAI_API_KEY
 
-async def evaluate_content(text: str, brand_config: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-    """Evaluate text with OpenAI using brand-specific context."""
+async def evaluate_content(
+    text: str,
+    brand_config: Dict[str, Any],
+    task_type: str = "brand_health",
+) -> Optional[Dict[str, Any]]:
+    """Evaluate text with OpenAI using brand-specific context.
+
+    The ``task_type`` determines whether the analysis focuses on
+    brand health or broader market intelligence.
+    """
     if not OPENAI_API_KEY:
         log.error("OpenAI API key is missing. Cannot evaluate content.")
         return None
@@ -32,9 +40,18 @@ async def evaluate_content(text: str, brand_config: Dict[str, Any]) -> Optional[
     persona = tone.get("persona", "")
     style = tone.get("style_guide", "")
 
+    focus_line = (
+        "Focus on market trends, competitor strategies and opportunities like "
+        "emerging delivery tech or ghost kitchens."
+        if task_type == "market_intelligence"
+        else "Focus on sentiment, customer service issues, product feedback and "
+        "direct competitor comparisons."
+    )
+
     prompt = f"""
 You are a helpful assistant that evaluates online text for the brand {brand_config.get('display_name', '')}.
 The content should align with a {persona} {style} tone.
+{focus_line}
 Focus on these keywords: {all_keywords}.
 Avoid these banned words: {banned_words}.
 

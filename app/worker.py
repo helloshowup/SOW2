@@ -73,12 +73,14 @@ def run_agent_logic(run_id: int, search_request: dict | None = None) -> None:
 
     evaluations: list[dict] = []
 
-    def crawl_and_evaluate(queries: list[str]) -> None:
+    def crawl_and_evaluate(queries: list[str], task_type: str) -> None:
         pages = scraper.crawl(queries)
         for page in pages:
             if not page.get("text"):
                 continue
-            result = asyncio.run(evaluate_content(page["text"], brand_config))
+            result = asyncio.run(
+                evaluate_content(page["text"], brand_config, task_type)
+            )
             if result:
                 result["url"] = page.get("url")
                 evaluations.append(result)
@@ -87,19 +89,19 @@ def run_agent_logic(run_id: int, search_request: dict | None = None) -> None:
         brand_queries = search_request.get("brand_health_queries") or []
         if brand_queries:
             log.info("Starting Brand Health analysis", queries=brand_queries)
-            crawl_and_evaluate(brand_queries)
+            crawl_and_evaluate(brand_queries, "brand_health")
 
         market_queries = search_request.get("market_intelligence_queries") or []
         if market_queries:
             log.info("Starting Market Intelligence analysis", queries=market_queries)
-            crawl_and_evaluate(market_queries)
+            crawl_and_evaluate(market_queries, "market_intelligence")
 
         if not brand_queries and not market_queries:
             search_terms = generate_search_terms(keywords)
-            crawl_and_evaluate(search_terms)
+            crawl_and_evaluate(search_terms, "brand_health")
     else:
         search_terms = generate_search_terms(keywords)
-        crawl_and_evaluate(search_terms)
+        crawl_and_evaluate(search_terms, "brand_health")
 
     # store completed results
     with Session(engine) as session:

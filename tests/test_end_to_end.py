@@ -23,7 +23,7 @@ def setup_module(module):
 def test_end_to_end(monkeypatch):
     monkeypatch.setattr(scraper.SimpleScraper, "crawl", lambda self, terms: [{"url": "http://example.com", "text": "pizza"}])
 
-    async def fake_eval(text, config):
+    async def fake_eval(text, config, task_type):
         return {"summary": "great"}
     monkeypatch.setattr(worker, "evaluate_content", fake_eval)
 
