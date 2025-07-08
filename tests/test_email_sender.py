@@ -3,6 +3,7 @@ from email.mime.multipart import MIMEMultipart
 
 from app.email_sender import EmailSender
 
+
 class DummySMTP:
     def __init__(self, server, port):
         self.server = server
@@ -27,6 +28,7 @@ class DummySMTP:
     def __exit__(self, exc_type, exc, tb):
         pass
 
+
 def test_send_summary_email(monkeypatch):
     dummy = DummySMTP("smtp.example.com", 587)
     monkeypatch.setattr(smtplib, "SMTP", lambda server, port: dummy)
@@ -40,17 +42,25 @@ def test_send_summary_email(monkeypatch):
         receiver_email="receiver@example.com",
     )
 
-    summary = {
-        "brand_health": [{"item": "Pizza", "score": 0.9}],
-        "market_intelligence": [{"item": "Burgers", "score": 0.8}],
-    }
-
-    sender.send_summary_email(summary, run_id=1)
+    sender.send_summary_email(
+        run_id=1,
+        on_brand_specific_links=["http://brand.com"],
+        brand_relevant_links=["http://relevant.com"],
+        brand_system_prompt="brand",
+        market_system_prompt="market",
+        user_prompt="user",
+        search_terms_generated=["pizza"],
+        num_search_calls=2,
+        search_times=["t1", "t2"],
+        content_summaries=["summary"],
+    )
 
     assert dummy.started
     assert dummy.logged_in == ("user", "pass")
     assert dummy.sent
     assert isinstance(dummy.sent_msg, MIMEMultipart)
     body = dummy.sent_msg.as_string()
-    assert "Brand Health Report" in body
-    assert "Market Intelligence Briefing" in body
+    assert "on brand specific" in body
+    assert "brand relevant but not brand specific" in body
+    assert "Brand System Prompt" in body
+    assert "Number of search calls" in body

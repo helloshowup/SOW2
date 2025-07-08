@@ -358,15 +358,15 @@ This epic covers the final but critical steps to transform the application from 
 ### Here's a breakdown of the tasks to achieve our sprint goal:
 
 #### **1\. Update app/email\_sender.py for New Email Template** template example: dev-research/example-email
-- [ ] ### Modify the send\_summary\_email method to construct the new email template.
-- [ ] ### The method should accept on\_brand\_specific\_links and brand\_relevant\_links as distinct parameters.
-- [ ] ### Format on\_brand\_specific\_links to include "Yes, it was helpful\! | No, it was not helpful." feedback options alongside each link.
-- [ ] ### Simply list brand\_relevant\_links.
-- [ ] ### The method should accept brand\_system\_prompt, market\_system\_prompt, user\_prompt, and search\_terms\_generated as parameters.
-- [ ] ### Dynamically insert these prompt engineering metadata values into the new section of the email.
-- [ ] ### The method should accept num\_search\_calls, search\_times, and content\_summaries as parameters.
-- [ ] ### Dynamically insert these content scraping activity values into the new section, formatting search\_times and content\_summaries for readability.
-- [ ] ### Ensure the EmailSender initialization or send\_summary\_email signature can accommodate all these new data points.
+- [x] ### Modify the send\_summary\_email method to construct the new email template.
+- [x] ### The method should accept on\_brand\_specific\_links and brand\_relevant\_links as distinct parameters.
+- [x] ### Format on\_brand\_specific\_links to include "Yes, it was helpful\! | No, it was not helpful." feedback options alongside each link.
+- [x] ### Simply list brand\_relevant\_links.
+- [x] ### The method should accept brand\_system\_prompt, market\_system\_prompt, user\_prompt, and search\_terms\_generated as parameters.
+- [x] ### Dynamically insert these prompt engineering metadata values into the new section of the email.
+- [x] ### The method should accept num\_search\_calls, search\_times, and content\_summaries as parameters.
+- [x] ### Dynamically insert these content scraping activity values into the new section, formatting search\_times and content\_summaries for readability.
+- [x] ### Ensure the EmailSender initialization or send\_summary\_email signature can accommodate all these new data points.
 
 #### **2\. Update app/agent.py to Collect and Pass All Required Data**
 - [ ] ### **Data Collection:** Capture the exact brand\_system\_prompt, market\_system\_prompt, and user\_prompt used during execution. Collect search\_terms\_generated after each search tool usage. Implement mechanisms to count num\_search\_calls, record search\_times (timestamps), and collect all content\_summaries during the agent's run. Refine OpenAIEvaluator result processing to explicitly categorize links into on\_brand\_specific\_links and brand\_relevant\_links.

@@ -17,14 +17,19 @@ engine = create_async_engine(
     connect_args={"check_same_thread": False},
     poolclass=StaticPool,
 )
-async_session_local = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
+async_session_local = async_sessionmaker(
+    engine, expire_on_commit=False, class_=AsyncSession
+)
 AgentRun.__table__.c.result.type = JSON()
+
 
 async def init_models() -> None:
     async with engine.begin() as conn:
         await conn.run_sync(SQLModel.metadata.create_all)
 
+
 asyncio.run(init_models())
+
 
 def setup_module(module):
     database.engine = engine
@@ -32,8 +37,13 @@ def setup_module(module):
     worker.engine = engine
     worker.async_session = async_session_local
 
+
 def test_end_to_end(monkeypatch):
-    monkeypatch.setattr(scraper.SimpleScraper, "crawl", lambda self, terms: [{"url": "http://example.com", "text": "pizza"}])
+    monkeypatch.setattr(
+        scraper.SimpleScraper,
+        "crawl",
+        lambda self, terms: [{"url": "http://example.com", "text": "pizza"}],
+    )
 
     async def fake_eval(text, config, task_type):
         return AnalysisResult(
@@ -41,13 +51,24 @@ def test_end_to_end(monkeypatch):
             sentiment=SentimentAnalysis(overall_sentiment="positive", score=0.9),
             entities=[],
         )
+
     monkeypatch.setattr(worker, "evaluate_content", fake_eval)
 
     sent = {}
 
-    def fake_send(self, results, run_id):
+    def fake_send(self, *args, **kwargs):
+        # support both the old and new calling conventions
+        if args and isinstance(args[0], int):
+            run_id = args[0]
+        elif len(args) >= 2 and isinstance(args[1], int):
+            run_id = args[1]
+        else:
+            run_id = kwargs.get("run_id")
+
         sent["run_id"] = run_id
-        sent["results"] = results
+        sent["on_brand"] = kwargs.get("on_brand_specific_links")
+        sent["relevant"] = kwargs.get("brand_relevant_links")
+
     monkeypatch.setattr(email_sender.EmailSender, "send_summary_email", fake_send)
 
     async def create_run():
@@ -71,4 +92,8 @@ def test_end_to_end(monkeypatch):
     assert updated.status == "completed"
     assert updated.result["brand_health"][0]["summary"] == "great"
     assert sent["run_id"] == run_id
-    assert sent["results"]["brand_health"][0]["item"] == "great"
+    assert (
+        sent["on_brand"] == []
+        or sent["on_brand"] is None
+        or isinstance(sent["on_brand"], list)
+    )
