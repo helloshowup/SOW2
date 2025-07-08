@@ -235,8 +235,8 @@ brands:
       - brand/assets/play_room_logo.png  
     embedding_id: null  
 
-  - id: lancewood-dairy  
-    display_name: Lancewood Dairy  
+  - id: lancewood-dairy
+    display_name: Lancewood Dairy
     tone:  
       persona: Warm, family-oriented, wholesome  
       style_guide: Traditional, nurturing, quality-focused  
@@ -269,4 +269,44 @@ brands:
       tweet: "From our farm to your table – experience the rich taste of our natural dairy products. #FamilyMeals #QualityIngredients"  
     asset_urls:  
       - brand/assets/lancewood_dairy_logo.png  
-    embedding_id: null  
+    embedding_id: null
+
+brand_health_examples:
+  - input: "The store was clean and the staff was friendly but the wait time was long."
+    output:
+      summary: "Customers found the store clean and staff friendly but were frustrated by long wait times."
+      sentiment:
+        overall_sentiment: "neutral"
+        score: 0.0
+      entities:
+        - name: "Debonairs Pizza"
+          type: "brand"
+  - input: "I loved the new vegan option at Debonairs! Great taste and fast delivery."
+    output:
+      summary: "Positive feedback on Debonairs' vegan option and quick delivery."
+      sentiment:
+        overall_sentiment: "positive"
+        score: 0.8
+      entities:
+        - name: "Debonairs"
+          type: "brand"
+
+market_intel_examples:
+  - input: "Competitor PizzaPlace introduced drone delivery in Cape Town."
+    output:
+      summary: "PizzaPlace is testing drone delivery in Cape Town, signaling investment in fast logistics technology."
+      sentiment:
+        overall_sentiment: "neutral"
+        score: 0.0
+      entities:
+        - name: "PizzaPlace"
+          type: "competitor"
+        - name: "Cape Town"
+          type: "location"
+  - input: "A recent report shows growing demand for plant-based cheese alternatives."
+    output:
+      summary: "Market research points to increased interest in plant-based cheese, suggesting an opportunity for new menu items."
+      sentiment:
+        overall_sentiment: "positive"
+        score: 0.2
+      entities: []

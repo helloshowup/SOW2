@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
 
 import instructor
 from openai import AsyncOpenAI
@@ -31,6 +31,48 @@ client.on(
     HookName.COMPLETION_LAST_ATTEMPT,
     lambda e: log.error("All retries exhausted", error=str(e)),
 )
+
+
+def _construct_prompt_messages(
+    task_type: str, brand_config: Dict[str, Any], user_input: str
+) -> List[Dict[str, str]]:
+    """Build the message list for the OpenAI chat completion call."""
+
+    keywords = brand_config.get("keywords", {})
+    all_keywords = ", ".join(keywords.get("core", []) + keywords.get("extended", []))
+    banned_words = ", ".join(brand_config.get("banned_words", []))
+    tone = brand_config.get("tone", {})
+    persona = tone.get("persona", "")
+    style = tone.get("style_guide", "")
+
+    focus_line = (
+        "Focus on market trends, competitor strategies and opportunities like "
+        "emerging delivery tech or ghost kitchens."
+        if task_type == "market_intelligence"
+        else "Focus on sentiment, customer service issues, product feedback and "
+        "direct competitor comparisons."
+    )
+
+    system_message = (
+        f"You are an expert assistant analyzing text for {brand_config.get('display_name', '')}. "
+        f"Use a {persona} {style} tone. {focus_line} "
+        f"Keywords to monitor: {all_keywords}. Avoid these banned words: {banned_words}. "
+        "Respond in JSON only."
+    )
+
+    examples_key = (
+        "brand_health_examples" if task_type == "brand_health" else "market_intel_examples"
+    )
+    examples = brand_config.get(examples_key, [])
+
+    messages: List[Dict[str, str]] = [{"role": "system", "content": system_message}]
+
+    for ex in examples:
+        messages.append({"role": "user", "content": ex.get("input", "")})
+        messages.append({"role": "assistant", "content": ex.get("output", "")})
+
+    messages.append({"role": "user", "content": user_input})
+    return messages
 
 
 async def repair_json_with_llm(text: str) -> Optional[AnalysisResult]:
@@ -70,50 +112,12 @@ async def evaluate_content(
         log.error("OpenAI API key is missing. Cannot evaluate content.")
         return None
 
-    keywords = brand_config.get("keywords", {})
-    core = keywords.get("core", [])
-    extended = keywords.get("extended", [])
-    all_keywords = ", ".join(core + extended)
-    banned_words = ", ".join(brand_config.get("banned_words", []))
-    tone = brand_config.get("tone", {})
-    persona = tone.get("persona", "")
-    style = tone.get("style_guide", "")
-
-    focus_line = (
-        "Focus on market trends, competitor strategies and opportunities like "
-        "emerging delivery tech or ghost kitchens."
-        if task_type == "market_intelligence"
-        else "Focus on sentiment, customer service issues, product feedback and "
-        "direct competitor comparisons."
-    )
-
-    prompt = f"""
-You are a helpful assistant that evaluates online text for the brand {brand_config.get('display_name', '')}.
-The content should align with a {persona} {style} tone.
-{focus_line}
-Focus on these keywords: {all_keywords}.
-Avoid these banned words: {banned_words}.
-
-Provide your response in JSON with the following fields:
-{{
-    "categories": [],
-    "sentiment": "",
-    "summary": "",
-    "keywords_present": [],
-    "banned_words_found": []
-}}
----
-{text}
----
-"""
+    messages = _construct_prompt_messages(task_type, brand_config, text)
 
     try:
         response = await client.chat.completions.create(
             model="gpt-3.5-turbo-0125",
-            messages=[
-                {"role": "system", "content": "You only respond in JSON."},
-                {"role": "user", "content": prompt},
-            ],
+            messages=messages,
             temperature=0.2,
             response_model=AnalysisResult,
             max_retries=2,
