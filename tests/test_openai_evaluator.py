@@ -12,6 +12,8 @@ async def dummy_create(*args, **kwargs):
         summary="ok",
         sentiment=SentimentAnalysis(overall_sentiment="positive", score=0.9),
         entities=[],
+        relevance_score=100.0,
+        categories=["News"],
     )
 
 @pytest.mark.asyncio
@@ -52,6 +54,8 @@ async def test_evaluate_content_repair(monkeypatch):
             summary="fixed",
             sentiment=SentimentAnalysis(overall_sentiment="positive", score=1.0),
             entities=[],
+            relevance_score=90.0,
+            categories=["News"],
         )
 
     monkeypatch.setattr(openai_evaluator, "OPENAI_API_KEY", "test")
