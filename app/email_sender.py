@@ -81,6 +81,17 @@ class EmailSender:
         def list_str(values: list[str] | None) -> str:
             return ", ".join(values) if values else "N/A"
 
+        def truncate(value: str | None, length: int = 300) -> str:
+            if not value:
+                return "N/A"
+            return value[:length] + ("..." if len(value) > length else "")
+
+        summaries_html = (
+            "".join([f"<li>{s}</li>" for s in content_summaries])
+            if content_summaries
+            else "<li>N/A</li>"
+        )
+
         html_sections = [
             "<html>",
             "<body style='font-family: Arial, sans-serif; line-height:1.4;'>",
@@ -90,18 +101,15 @@ class EmailSender:
             "<h3>Below are 3 links that AI thinks are brand relevant but not brand specific</h3>",
             f"<ul>{list_links(brand_relevant_links)}</ul>",
             "<h3>Prompt Engineering Metadata</h3>",
-            "<ul>",
-            f"<li><strong>Brand System Prompt</strong> {brand_system_prompt or 'N/A'}</li>",
-            f"<li><strong>Market System Prompt</strong> {market_system_prompt or 'N/A'}</li>",
-            f"<li><strong>User Prompt</strong> {user_prompt or 'N/A'}</li>",
-            f"<li><strong>Search Terms</strong> Generated {list_str(search_terms_generated)}</li>",
-            "</ul>",
+            f"<p><strong>Brand System Prompt:</strong> {truncate(brand_system_prompt)}</p>",
+            f"<p><strong>Market System Prompt:</strong> {truncate(market_system_prompt)}</p>",
+            f"<p><strong>User Prompt:</strong> {user_prompt or 'N/A'}</p>",
+            f"<p><strong>Search Terms Generated:</strong> {list_str(search_terms_generated)}</p>",
             "<h3>Content Scraped Since last email</h3>",
-            "<ul>",
-            f"<li><strong>Number of search calls</strong>: {num_search_calls if num_search_calls is not None else 'N/A'}</li>",
-            f"<li><strong>Searches run at</strong> {list_str(search_times)}</li>",
-            f"<li><strong>Summaries</strong>: {list_str(content_summaries)}</li>",
-            "</ul>",
+            f"<p><strong>Number of Search Calls:</strong> {num_search_calls if num_search_calls is not None else 'N/A'}</p>",
+            f"<p><strong>Searches Run At:</strong> {list_str(search_times)}</p>",
+            "<p><strong>Summaries:</strong></p>",
+            f"<ul>{summaries_html}</ul>",
             "</body></html>",
         ]
 
