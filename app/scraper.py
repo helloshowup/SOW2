@@ -5,6 +5,7 @@ from typing import Iterable
 
 import requests
 from bs4 import BeautifulSoup
+import urllib.parse
 import yaml
 import structlog
 
@@ -70,10 +71,24 @@ class SimpleScraper:
         links: list[str] = []
         for a in soup.select("a.result__a"):
             href = a.get("href")
-            if href:
-                links.append(href)
-                if len(links) >= max_results:
-                    break
+            if not href:
+                continue
+
+            if href.startswith("//"):
+                href = "https:" + href
+
+            resolved = urllib.parse.urljoin("https://duckduckgo.com", href)
+            parsed = urllib.parse.urlparse(resolved)
+
+            if parsed.netloc.endswith("duckduckgo.com") and parsed.path.startswith("/l/"):
+                qs = urllib.parse.parse_qs(parsed.query)
+                uddg = qs.get("uddg")
+                if uddg:
+                    resolved = urllib.parse.unquote(uddg[0])
+
+            links.append(resolved)
+            if len(links) >= max_results:
+                break
         return links
 
     def scrape_page(self, url: str) -> str:
