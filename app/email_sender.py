@@ -47,43 +47,81 @@ class EmailSender:
                 receiver_email=bool(self.receiver_email),
             )
 
-    def _build_html(self, results: dict[str, list[dict]], run_id: int) -> str:
-        """Return HTML body for the summary email."""
+    def _build_html(
+        self,
+        run_id: int,
+        on_brand_specific_links: list[str] | None = None,
+        brand_relevant_links: list[str] | None = None,
+        brand_system_prompt: str | None = None,
+        market_system_prompt: str | None = None,
+        user_prompt: str | None = None,
+        search_terms_generated: list[str] | None = None,
+        num_search_calls: int | None = None,
+        search_times: list[str] | None = None,
+        content_summaries: list[str] | None = None,
+    ) -> str:
+        """Return HTML body for the summary email using the new template."""
 
-        def list_items(items: list[dict]) -> str:
-            if not items:
-                return "<li>No results found.</li>"
-            return "".join(
-                (
-                    f"<li><strong>{i+1}. {r.get('item', 'N/A')}</strong> "
-                    f"(Score: {r.get('score', 'N/A'):.2f})</li>"
+        def list_links(links: list[str] | None, include_feedback: bool = False) -> str:
+            if not links:
+                return "<li>No links found.</li>"
+            items = []
+            for link in links:
+                feedback = (
+                    (
+                        f" - <a href='http://localhost:8000/feedback?run_id={run_id}&feedback=yes'>Yes, it was helpful!</a> | "
+                        f"<a href='http://localhost:8000/feedback?run_id={run_id}&feedback=no'>No, it was not helpful.</a>"
+                    )
+                    if include_feedback
+                    else ""
                 )
-                for i, r in enumerate(items)
-            )
+                items.append(f"<li><a href='{link}'>{link}</a>{feedback}</li>")
+            return "".join(items)
 
-        brand_section = (
-            f"<h3>Brand Health Report</h3>"
-            f"<ul>{list_items(results.get('brand_health', []))}</ul>"
-        )
-        market_section = (
-            f"<h3>Market Intelligence Briefing</h3>"
-            f"<ul>{list_items(results.get('market_intelligence', []))}</ul>"
-        )
+        def list_str(values: list[str] | None) -> str:
+            return ", ".join(values) if values else "N/A"
 
-        return (
-            f"<html>"
-            f"<body style=\"font-family: Arial, sans-serif; line-height:1.4;\">"
-            f"<h2 style=\"color:#333;\">AI Agent Daily Summary - Run {run_id}</h2>"
-            f"{brand_section}{market_section}"
-            f"<p>"
-            f"<a href='http://localhost:8000/feedback?run_id={run_id}&feedback=yes'>Yes, it was helpful!</a> | "
-            f"<a href='http://localhost:8000/feedback?run_id={run_id}&feedback=no'>No, it was not helpful.</a>"
-            f"</p>"
-            f"</body></html>"
-        )
+        html_sections = [
+            "<html>",
+            "<body style='font-family: Arial, sans-serif; line-height:1.4;'>",
+            f"<h3>Hi there</h3>",
+            "<h3>Below are links that the AI thinks are on brand specific</h3>",
+            f"<ul>{list_links(on_brand_specific_links, include_feedback=True)}</ul>",
+            "<h3>Below are 3 links that AI thinks are brand relevant but not brand specific</h3>",
+            f"<ul>{list_links(brand_relevant_links)}</ul>",
+            "<h3>Prompt Engineering Metadata</h3>",
+            "<ul>",
+            f"<li><strong>Brand System Prompt</strong> {brand_system_prompt or 'N/A'}</li>",
+            f"<li><strong>Market System Prompt</strong> {market_system_prompt or 'N/A'}</li>",
+            f"<li><strong>User Prompt</strong> {user_prompt or 'N/A'}</li>",
+            f"<li><strong>Search Terms</strong> Generated {list_str(search_terms_generated)}</li>",
+            "</ul>",
+            "<h3>Content Scraped Since last email</h3>",
+            "<ul>",
+            f"<li><strong>Number of search calls</strong>: {num_search_calls if num_search_calls is not None else 'N/A'}</li>",
+            f"<li><strong>Searches run at</strong> {list_str(search_times)}</li>",
+            f"<li><strong>Summaries</strong>: {list_str(content_summaries)}</li>",
+            "</ul>",
+            "</body></html>",
+        ]
 
-    def send_summary_email(self, results: dict[str, list[dict]], run_id: int) -> None:
-        """Send an email summary with basic HTML styling."""
+        return "".join(html_sections)
+
+    def send_summary_email(
+        self,
+        run_id: int,
+        *,
+        on_brand_specific_links: list[str] | None = None,
+        brand_relevant_links: list[str] | None = None,
+        brand_system_prompt: str | None = None,
+        market_system_prompt: str | None = None,
+        user_prompt: str | None = None,
+        search_terms_generated: list[str] | None = None,
+        num_search_calls: int | None = None,
+        search_times: list[str] | None = None,
+        content_summaries: list[str] | None = None,
+    ) -> None:
+        """Send an email summary using the new template."""
         if not all(
             [
                 self.smtp_server,
@@ -101,7 +139,18 @@ class EmailSender:
         msg["From"] = self.sender_email
         msg["To"] = self.receiver_email
 
-        html_content = self._build_html(results, run_id)
+        html_content = self._build_html(
+            run_id,
+            on_brand_specific_links=on_brand_specific_links,
+            brand_relevant_links=brand_relevant_links,
+            brand_system_prompt=brand_system_prompt,
+            market_system_prompt=market_system_prompt,
+            user_prompt=user_prompt,
+            search_terms_generated=search_terms_generated,
+            num_search_calls=num_search_calls,
+            search_times=search_times,
+            content_summaries=content_summaries,
+        )
         msg.attach(MIMEText(html_content, "html"))
 
         context = ssl.create_default_context()
@@ -119,7 +168,6 @@ class EmailSender:
             log.error("Failed to send email summary", exc_info=e, run_id=run_id)
 
 
-def send_summary_email(results: dict[str, list[dict]], run_id: int) -> None:
-    """Backward-compatible wrapper for EmailSender."""
-    EmailSender().send_summary_email(results, run_id)
-
+def send_summary_email(run_id: int, **kwargs) -> None:
+    """Convenience wrapper for ``EmailSender``."""
+    EmailSender().send_summary_email(run_id, **kwargs)
