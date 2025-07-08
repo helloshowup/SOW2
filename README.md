@@ -186,9 +186,9 @@ Focus: Integration & End-to-End Workflow (Estimated 6-10 hours)
 - [x] Load brand configuration from `dev-research/brand_repo.yaml`.
 - [x] Construct `debonair` brand YAML for testing using the values in `dev-research/brand_repo.yaml` (`dev-research/debonair_brand.yaml`).
 - [x] Implement evaluation module using the OpenAI API (`app/openai_evaluator.py`).
-- [ ] Compose summary email and send via SMTP with feedback links.
-- [ ] Implement feedback receiver storing responses in SQLite.
-- [ ] Write unit tests for scraping and email modules.
+- [x] Compose summary email and send via SMTP with feedback links.
+- [x] Implement feedback receiver storing responses in SQLite.
+- [x] Write unit tests for scraping and email modules.
 - [ ] Securely load OpenAI API key via app/config.py
 - [ ] Implement EmailSender class with HTML template and styling.
 - [ ] Add /feedback endpoint and SQLite model.

@@ -2,13 +2,18 @@ from redis import Redis
 from rq import Worker, Queue, Connection
 
 from .config import get_settings
+from .email_sender import send_summary_email
 import structlog
 
 log = structlog.get_logger()
 
 def run_agent_logic(run_id: int) -> None:
-    """Placeholder for the actual agent logic."""
+    """Placeholder agent logic that emails a summary."""
     log.info("Executing agent logic", run_id=run_id)
+    top_results = [
+        {"item": f"Result {i+1}", "score": 1 - i * 0.1} for i in range(5)
+    ]
+    send_summary_email(top_results, run_id)
 
 
 def run_worker() -> None:
