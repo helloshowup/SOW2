@@ -36,7 +36,7 @@ A minimal backend setup for running an AI agent every 10 minutes, persisting res
 
 ## Configuration
 
-All configuration values are read from environment variables. See `.env.example` for reference. Typical variables include `DATABASE_URL`, `LOG_LEVEL`, `REDIS_URL`, `AGENT_RUN_INTERVAL_MINUTES`, and `OPENAI_API_KEY` for the scheduler frequency and API access.
+All configuration values are read from environment variables. See `.env.example` for reference. Typical variables include `DATABASE_URL`, `LOG_LEVEL`, `REDIS_URL`, `AGENT_RUN_INTERVAL_MINUTES`, and `OPENAI_API_KEY` for the scheduler frequency and API access. To customize scraping queries, copy `search_config.json.example` to `search_config.json` and adjust the `brand_health_queries` and `market_intelligence_queries` lists.
 
 ## Architecture
 
@@ -184,9 +184,9 @@ To-Do List:
 - [x] Add conditional logic to tailor the AI's analysis.  
 * For Brand Health, the AI should focus on sentiment, customer service issues, product feedback, and direct competitor comparisons.  
 * For Market Intelligence, the AI should focus on identifying market trends, new competitor strategies, and emerging opportunities (e.g., ghost kitchens, new delivery tech).  
-3. Create a Search Configuration Template  
-- [ ] Create a new template file named search\_config.json.example in the project's root directory.  
-- [ ] Populate it with a clear example structure, demonstrating how to define both brand\_health\_queries and market\_intelligence\_queries.  
+3. Create a Search Configuration Template
+- [x] Create a new template file named search\_config.json.example in the project's root directory.
+- [x] Populate it with a clear example structure, demonstrating how to define both brand\_health\_queries and market\_intelligence\_queries.
 4. Improve Email Summaries (app/email\_sender.py)  
 - [ ] Update the send\_summary\_email function to accept the consolidated results from both tasks.  
 - [ ] Re-format the email body to present the findings under two distinct, clear headings: Brand Health Report and Market Intelligence Briefing.  
