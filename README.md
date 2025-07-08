@@ -189,6 +189,12 @@ Focus: Integration & End-to-End Workflow (Estimated 6-10 hours)
 - [x] Compose summary email and send via SMTP with feedback links.
 - [x] Implement feedback receiver storing responses in SQLite.
 - [x] Write unit tests for scraping and email modules.
+- [ ] Securely load OpenAI API key via app/config.py
+- [ ] Implement EmailSender class with HTML template and styling.
+- [ ] Add /feedback endpoint and SQLite model.
+- [ ] Integrate evaluator and email sender into app/worker.py.
+- [ ] Unit tests for evaluator, feedback routes, and end-to-end workflow.
+- [ ] Documentation updates and final cleanup.
 
 ## **Coding Practices**
 
