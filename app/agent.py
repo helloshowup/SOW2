@@ -76,6 +76,7 @@ async def run_agent_iteration(run_id: int, search_request: dict | None = None) -
     
             brand_queries: List[str] = []
             market_phrase_list: List[str] = (
+
                 search_request.get("market_intelligence_queries", [])
                 if search_request
                 else []
@@ -89,6 +90,7 @@ async def run_agent_iteration(run_id: int, search_request: dict | None = None) -
                 rotating_phrases_override or rotating_search_phrases
             )
             market_queries: List[str] = []
+
     
             custom_query_phrases = None
             if search_request:
@@ -104,6 +106,7 @@ async def run_agent_iteration(run_id: int, search_request: dict | None = None) -
                 for kw in sampled_keywords:
                     # Mix and match with rotating search phrases
                     random_phrase = random.choice(rotating_phrases)
+
                     generated_custom_queries.append(f"{kw} {random_phrase}")
                     if len(generated_custom_queries) >= max_generated_terms:
                         break
@@ -133,6 +136,7 @@ async def run_agent_iteration(run_id: int, search_request: dict | None = None) -
                         "Generated market intelligence queries from search_config.json",
                         num_queries=len(market_queries),
                     )
+
     
             defaults_used = False
             if not brand_queries:
@@ -161,6 +165,7 @@ async def run_agent_iteration(run_id: int, search_request: dict | None = None) -
                     )
                     for kw in sampled_keywords:
                         random_phrase = random.choice(rotating_phrases)
+
                         generated_fallback_queries.append(f"{kw} {random_phrase}")
                         if len(generated_fallback_queries) >= max_generated_terms:
                             break
