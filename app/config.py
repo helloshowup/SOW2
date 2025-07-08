@@ -1,5 +1,5 @@
 from functools import lru_cache
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
     agent_run_interval_minutes: int = 10
     brand_repo_path: str = "dev-research/brand_repo.yaml"
+    openai_api_key: str | None = None
 
     class Config:
         env_file = ".env"

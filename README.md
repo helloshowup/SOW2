@@ -36,7 +36,7 @@ A minimal backend setup for running an AI agent every 10 minutes, persisting res
 
 ## Configuration
 
-All configuration values are read from environment variables. See `.env.example` for reference. Typical variables include `DATABASE_URL`, `LOG_LEVEL`, `REDIS_URL`, and `AGENT_RUN_INTERVAL_MINUTES` for the scheduler frequency.
+All configuration values are read from environment variables. See `.env.example` for reference. Typical variables include `DATABASE_URL`, `LOG_LEVEL`, `REDIS_URL`, `AGENT_RUN_INTERVAL_MINUTES`, and `OPENAI_API_KEY` for the scheduler frequency and API access.
 
 ## Architecture
 
@@ -189,9 +189,9 @@ Focus: Integration & End-to-End Workflow (Estimated 6-10 hours)
 - [x] Compose summary email and send via SMTP with feedback links.
 - [x] Implement feedback receiver storing responses in SQLite.
 - [x] Write unit tests for scraping and email modules.
-- [ ] Securely load OpenAI API key via app/config.py
-- [ ] Implement EmailSender class with HTML template and styling.
-- [ ] Add /feedback endpoint and SQLite model.
+- [x] Securely load OpenAI API key via app/config.py
+- [x] Implement EmailSender class with HTML template and styling.
+- [x] Add /feedback endpoint and SQLite model.
 - [ ] Integrate Scraper and Evaluator into the Worker: The main task remaining is to integrate the SimpleScraper and evaluate_content function into the app/worker.py's run_agent_logic function. The current run_agent_logic is a placeholder and needs to be updated to perform the actual scraping and evaluation..
 - [ ] Unit tests for evaluator, feedback routes, and end-to-end workflow.
 - [ ] verify Email Content: The send_summary_email function in app/email_sender.py currently sends a generic list of results. This should be updated to use the actual evaluated content from the OpenAI evaluator.

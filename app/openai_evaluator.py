@@ -1,15 +1,19 @@
-import os
 import json
 from typing import Dict, Any, Optional
 
 import openai
 import structlog
 
+from .config import get_settings
+
 log = structlog.get_logger()
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+settings = get_settings()
+OPENAI_API_KEY = settings.openai_api_key
 if not OPENAI_API_KEY:
-    log.critical("OPENAI_API_KEY environment variable is not set. OpenAI API calls may fail.")
+    log.critical(
+        "OPENAI_API_KEY environment variable is not set. OpenAI API calls may fail."
+    )
 
 openai.api_key = OPENAI_API_KEY
 
