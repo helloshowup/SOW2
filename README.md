@@ -14,7 +14,6 @@ An automated backend for running AI agents on a schedule. It scrapes the web usi
 * [Logging & Monitoring](#logging--monitoring)
 * [Data Acquisition Strategy](#data-acquisition-strategy)
 * [Email Summary Report Structure](#email-summary-report-structure)
-* [TODOs](#todos)
 * [Coding Practices](#coding-practices)
 * [License](#license)
 ## Tech Stack
@@ -106,8 +105,7 @@ This can be used by Docker or orchestration tools to confirm the service is runn
 * Optional: forward logs to Elasticsearch/Kibana.
 
 ## Data Acquisition Strategy
-
-The scraper now primarily pulls data from Google Search Engine Results Page (SERP) snippets. This reduces direct load on external sites and helps avoid "Too Many Requests" errors while still generating search terms and analyzing the results as before.
+The system now primarily collects data from Google Search Engine Results Page (SERP) snippets. This shift enhances ethical data collection by reducing direct load on external websites and helps avoid "Too Many Requests" errors. Search term generation and downstream analysis remain unchanged.
 
 ## Email Summary Report Structure
 
@@ -140,34 +138,6 @@ Summaries: summary text here
 ```
 
 
-## General TODOs
-- [x] Initialize FastAPI project structure (`app/main.py`, `app/routes.py`).
-- [x] Define `AgentRun` model with SQLModel and auto-create tables.
-- [x] Set up environment configuration loader (`python-dotenv`) and structured logging (`structlog`).
-- [x] Configure Redis with RQ and create the worker scaffold.
-- [x] Schedule `/run-agent` using APScheduler to enqueue jobs.
-- [x] Document scheduler setup and required environment variables.
-- [x] Build scraping module (`scraper.py`) with retry logic to gather a short sample of the internet (about 10 minutes of crawling as described in `dev-research/research_workflow_doc.md`) for interesting content relevant to the brand. Use lateral thinking when choosing search terms from `dev-research/brand_repo.yaml`.
-- [x] Load brand configuration from `dev-research/brand_repo.yaml`.
-- [x] Construct `debonair` brand YAML for testing using the values in `dev-research/brand_repo.yaml` (`dev-research/debonair_brand.yaml`).
-- [x] Implement evaluation module using the OpenAI API (`app/openai_evaluator.py`).
-- [x] Compose summary email and send via SMTP with feedback links.
-- [x] Implement feedback receiver storing responses in SQLite.
-- [x] Write unit tests for scraping and email modules.
-- [x] Securely load OpenAI API key via app/config.py
-- [x] Implement EmailSender class with HTML template and styling.
-- [x] Add /feedback endpoint and SQLite model.
-- [x] Integrate Scraper and Evaluator into the Worker: The main task remaining is to integrate the SimpleScraper and evaluate_content function into the app/worker.py's run_agent_logic function. The current run_agent_logic is a placeholder and needs to be updated to perform the actual scraping and evaluation.
-- [x] Create a docker-compose.yml file: This is the most critical missing piece. The file must define the api, worker, db, and redis services, their builds, environments, and dependencies.
-- [x] Unit tests for evaluator, feedback routes, and end-to-end workflow.
-- [x] verify Email Content: The send_summary_email function in app/email_sender.py currently sends a generic list of results. This should be updated to use the actual evaluated content from the OpenAI evaluator.
-- [x] Create a docker-compose.yml file: This is the most critical missing piece. The file must define the api, worker, db, and redis services, their builds, environments, and dependencies.
-- [x] Create an .env.example template file: Create a template file that lists all the necessary environment variables but with placeholder values. This provides a clear guide for others on how to create their own .env file.Variables to include: POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB, OPENAI_API_KEY, and all MAIL_* settings.
-- [x] write sample Dockerfile for local launch
-- [x] Create a file named smoke_test.sh in your project's root directory as based on dev-research\smoke-test-suggestion.txt
-- [x] Documentation updates and final cleanup.
-
-## **Coding Practices**
 
 ### **Fail Fast**
 
@@ -182,7 +152,7 @@ Summaries: summary text here
 5. Document how to run and test
    Provide step-by-step instructions in the README for starting the scheduler and how to see logs when something goes wrong. This supports a non-coder who may need to troubleshoot issues.
 6. Consult dev-research links when relevant
-   The `dev-research` folder lists articles and repositories that demonstrate best practices. These sites have been whitelisted in the Codex environment, so reference them whenever they directly support Sprint 2 objectives.
+   The `dev-research` folder lists articles and repositories that demonstrate best practices. These sites have been whitelisted in the Codex environment, so reference them whenever they directly support project objectives.
 
 
 ## License
