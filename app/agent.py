@@ -63,11 +63,17 @@ async def run_agent_iteration(run_id: int, search_request: dict | None = None) -
         )
 
         brand_queries: List[str] = []
-        market_queries: List[str] = []
-
-        custom_query_phrases = (
-            search_request.get("custom_query_phrases") if search_request else None
+        market_queries: List[str] = (
+            search_request.get("market_intelligence_queries", [])
+            if search_request
+            else []
         )
+
+        custom_query_phrases = None
+        if search_request:
+            custom_query_phrases = search_request.get("custom_query_phrases")
+            if not custom_query_phrases:
+                custom_query_phrases = search_request.get("brand_health_queries")
 
         if custom_query_phrases and keywords:
             sampled_keywords = random.sample(
@@ -88,19 +94,23 @@ async def run_agent_iteration(run_id: int, search_request: dict | None = None) -
                     num_queries=len(brand_queries),
                 )
 
+        defaults_used = False
         if not brand_queries:
             brand_queries = brand_config.get("search_queries", {}).get(
                 "brand_health", []
             )
+            defaults_used = defaults_used or bool(brand_queries)
+        if not market_queries:
             market_queries = brand_config.get("search_queries", {}).get(
                 "market_intelligence", []
             )
-            if brand_queries or market_queries:
-                log.info(
-                    "Using generic default queries from brand config",
-                    num_brand_queries=len(brand_queries),
-                    num_market_queries=len(market_queries),
-                )
+            defaults_used = defaults_used or bool(market_queries)
+        if defaults_used:
+            log.info(
+                "Using generic default queries from brand config",
+                num_brand_queries=len(brand_queries),
+                num_market_queries=len(market_queries),
+            )
 
         if not brand_queries and not market_queries:
             brand_queries = generate_search_terms(
