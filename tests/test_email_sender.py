@@ -48,8 +48,8 @@ def test_send_summary_email(monkeypatch):
 
     sender.send_summary_email(
         run_id=1,
-        on_brand_specific_links=["http://brand.com"],
-        brand_relevant_links=["http://relevant.com"],
+        on_brand_specific_links=[{"url": "http://brand.com", "snappy_heading": "Brand"}],
+        brand_relevant_links=[{"url": "http://relevant.com", "snappy_heading": "Relevant"}],
         brand_system_prompt="brand",
         market_system_prompt="market",
         user_prompt="user",
@@ -63,9 +63,9 @@ def test_send_summary_email(monkeypatch):
     assert dummy.logged_in == ("user", "pass")
     assert dummy.sent
     assert isinstance(dummy.sent_msg, MIMEMultipart)
-    body = dummy.sent_msg.as_string()
-    assert "on brand specific" in body
-    assert "brand relevant but not brand specific" in body
-    assert "Brand System Prompt" in body
-    assert "Number of Search Calls" in body
+    body_raw = dummy.sent_msg.get_payload()[0].get_payload(decode=True).decode()
+    assert "on brand specific" in body_raw
+    assert "brand relevant but not brand specific" in body_raw
+    assert "Brand System Prompt" in body_raw
+    assert "Number of Search Calls" in body_raw
 

@@ -57,6 +57,9 @@ class AnalysisResult(BaseModel):
     """Validated structure for AI-generated analysis output."""
 
     summary: str = PydanticField(description="Concise summary of the content")
+    snappy_heading: str = PydanticField(
+        description="A concise, engaging title for the content, suitable for a link or headline."
+    )
     sentiment: SentimentAnalysis = PydanticField(
         description="Sentiment analysis details"
     )
