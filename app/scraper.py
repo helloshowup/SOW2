@@ -8,8 +8,12 @@ from bs4 import BeautifulSoup
 import urllib.parse
 import yaml
 import structlog
+from sqlmodel import Session, select
+from datetime import date
 
 from .config import get_settings
+from .database import engine
+from .models import VisitedUrl
 
 log = structlog.get_logger(__name__)
 
@@ -63,6 +67,11 @@ class SimpleScraper:
         response.raise_for_status()
         return response.text
 
+    def _get_domain(self, url: str) -> str:
+        """Extract and normalize the domain from a URL."""
+        parsed = urllib.parse.urlparse(url)
+        return parsed.netloc.lower()
+
     def search(self, term: str, max_results: int = 5) -> list[str]:
         """Return a list of result URLs from DuckDuckGo HTML search."""
         query = requests.utils.quote(term)
@@ -103,6 +112,43 @@ class SimpleScraper:
         pages: list[dict] = []
         for term in terms:
             for link in self.search(term, max_results=max_results):
+                domain = self._get_domain(link)
+                try:
+                    with Session(engine.sync_engine) as session:
+                        stmt = select(VisitedUrl).where(
+                            VisitedUrl.domain == domain,
+                            VisitedUrl.last_visited_date == date.today(),
+                        )
+                        if session.exec(stmt).first():
+                            log.info(
+                                "Skipping already visited domain today", domain=domain
+                            )
+                            continue
+                except Exception as exc:  # pragma: no cover - runtime safety
+                    log.error("Visit check failed", error=str(exc))
+
                 text = self.scrape_page(link)
                 pages.append({"url": link, "text": text})
+
+                try:
+                    with Session(engine.sync_engine) as session:
+                        existing = session.exec(
+                            select(VisitedUrl).where(VisitedUrl.domain == domain)
+                        ).first()
+                        if existing:
+                            existing.last_visited_date = date.today()
+                            existing.url = link
+                            session.add(existing)
+                        else:
+                            session.add(
+                                VisitedUrl(
+                                    url=link,
+                                    domain=domain,
+                                    last_visited_date=date.today(),
+                                )
+                            )
+                        session.commit()
+                except Exception as exc:  # pragma: no cover - runtime safety
+                    log.error("Failed to record visit", error=str(exc))
+                    session.rollback()
         return pages
