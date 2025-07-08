@@ -169,19 +169,37 @@ Focus: Integration & End-to-End Workflow (Estimated 6-10 hours)
 - **e** Code cleanup, documentation updates, and final review before sprint conclusion.
   - Ensure the `README.md` reflects the final PoC state.
   - Add comments where necessary to clarify complex logic.
-## TODOs
 
-### Branch `backend-infra`
+### Sprint: Market Intelligence Expansion 
 
+Goal: To evolve the agent from a simple brand monitor into a dual-purpose market intelligence tool. This sprint will enable the system to analyze both our brand's specific health and broader industry trends, providing a far more powerful and context-aware summary.
+
+To-Do List:
+
+1. Refactor Core Worker Logic (app/worker.py)  
+- [ ] Modify the run\_agent\_logic function to process a structured JSON request that separates brand\_health\_queries from market\_intelligence\_queries.  
+- [ ] Implement a loop or sequential calls within the function to execute scraping and evaluation for both Brand Health and Market Intelligence tasks independently.  
+2. Enhance the AI Evaluator (evaluate\_content)  
+- [ ] Update the evaluate\_content function to accept a task\_type parameter (e.g., "brand\_health" or "market\_intelligence").  
+- [ ] Add conditional logic to tailor the AI's analysis.  
+* For Brand Health, the AI should focus on sentiment, customer service issues, product feedback, and direct competitor comparisons.  
+* For Market Intelligence, the AI should focus on identifying market trends, new competitor strategies, and emerging opportunities (e.g., ghost kitchens, new delivery tech).  
+3. Create a Search Configuration Template  
+- [ ] Create a new template file named search\_config.json.example in the project's root directory.  
+- [ ] Populate it with a clear example structure, demonstrating how to define both brand\_health\_queries and market\_intelligence\_queries.  
+4. Improve Email Summaries (app/email\_sender.py)  
+- [ ] Update the send\_summary\_email function to accept the consolidated results from both tasks.  
+- [ ] Re-format the email body to present the findings under two distinct, clear headings: Brand Health Report and Market Intelligence Briefing.  
+5. Update Project Documentation  
+- [ ] Revise the main project description to reflect its enhanced capabilities as a market intelligence tool.
+
+## General TODOs
 - [x] Initialize FastAPI project structure (`app/main.py`, `app/routes.py`).
 - [x] Define `AgentRun` model with SQLModel and auto-create tables.
 - [x] Set up environment configuration loader (`python-dotenv`) and structured logging (`structlog`).
 - [x] Configure Redis with RQ and create the worker scaffold.
 - [x] Schedule `/run-agent` using APScheduler to enqueue jobs.
 - [x] Document scheduler setup and required environment variables.
-
--### Branch `scraper-email`
-
 - [x] Build scraping module (`scraper.py`) with retry logic to gather a short sample of the internet (about 10 minutes of crawling as described in `dev-research/research_workflow_doc.md`) for interesting content relevant to the brand. Use lateral thinking when choosing search terms from `dev-research/brand_repo.yaml`.
 - [x] Load brand configuration from `dev-research/brand_repo.yaml`.
 - [x] Construct `debonair` brand YAML for testing using the values in `dev-research/brand_repo.yaml` (`dev-research/debonair_brand.yaml`).
