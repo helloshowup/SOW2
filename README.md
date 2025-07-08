@@ -180,8 +180,8 @@ To-Do List:
 - [x] Modify the run\_agent\_logic function to process a structured JSON request that separates brand\_health\_queries from market\_intelligence\_queries.
 - [x] Implement a loop or sequential calls within the function to execute scraping and evaluation for both Brand Health and Market Intelligence tasks independently.
 2. Enhance the AI Evaluator (evaluate\_content)  
-- [ ] Update the evaluate\_content function to accept a task\_type parameter (e.g., "brand\_health" or "market\_intelligence").  
-- [ ] Add conditional logic to tailor the AI's analysis.  
+- [x] Update the evaluate\_content function to accept a task\_type parameter (e.g., "brand\_health" or "market\_intelligence").  
+- [x] Add conditional logic to tailor the AI's analysis.  
 * For Brand Health, the AI should focus on sentiment, customer service issues, product feedback, and direct competitor comparisons.  
 * For Market Intelligence, the AI should focus on identifying market trends, new competitor strategies, and emerging opportunities (e.g., ghost kitchens, new delivery tech).  
 3. Create a Search Configuration Template  

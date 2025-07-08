@@ -26,5 +26,7 @@ async def test_evaluate_content(monkeypatch):
     monkeypatch.setattr(openai_evaluator, "OPENAI_API_KEY", "test")
     monkeypatch.setattr(openai_evaluator.openai.ChatCompletion, "acreate", dummy_acreate)
 
-    result = await openai_evaluator.evaluate_content("sample text", brand_config)
+    result = await openai_evaluator.evaluate_content(
+        "sample text", brand_config, "brand_health"
+    )
     assert result == {"summary": "ok"}
