@@ -1,5 +1,6 @@
 import asyncio
 import os
+import random
 from datetime import datetime
 from typing import Any, Dict, List
 
@@ -57,15 +58,58 @@ async def run_agent_iteration(run_id: int, search_request: dict | None = None) -
         brand_pages: List[Dict[str, Any]] = []
         market_pages: List[Dict[str, Any]] = []
 
-        if search_request:
-            brand_queries = search_request.get(
-                "brand_health_queries",
-                generate_search_terms(keywords),
+        max_generated_terms = (
+            search_request.get("max_search_terms_generated", 5) if search_request else 5
+        )
+
+        brand_queries: List[str] = []
+        market_queries: List[str] = []
+
+        custom_query_phrases = (
+            search_request.get("custom_query_phrases") if search_request else None
+        )
+
+        if custom_query_phrases and keywords:
+            sampled_keywords = random.sample(
+                keywords, min(max_generated_terms, len(keywords))
             )
-            market_queries = search_request.get("market_intelligence_queries", [])
-        else:
-            brand_queries = generate_search_terms(keywords)
-            market_queries = []
+            generated_custom_queries: List[str] = []
+            for kw in sampled_keywords:
+                for phrase in custom_query_phrases:
+                    generated_custom_queries.append(f"{kw} {phrase}")
+                    if len(generated_custom_queries) >= max_generated_terms:
+                        break
+                if len(generated_custom_queries) >= max_generated_terms:
+                    break
+            if generated_custom_queries:
+                brand_queries = generated_custom_queries
+                log.info(
+                    "Generated custom queries from search_config.json",
+                    num_queries=len(brand_queries),
+                )
+
+        if not brand_queries:
+            brand_queries = brand_config.get("search_queries", {}).get(
+                "brand_health", []
+            )
+            market_queries = brand_config.get("search_queries", {}).get(
+                "market_intelligence", []
+            )
+            if brand_queries or market_queries:
+                log.info(
+                    "Using generic default queries from brand config",
+                    num_brand_queries=len(brand_queries),
+                    num_market_queries=len(market_queries),
+                )
+
+        if not brand_queries and not market_queries:
+            brand_queries = generate_search_terms(
+                keywords, max_terms=max_generated_terms
+            )
+            log.info(
+                "Using simple 'news' queries as fallback",
+                num_queries=len(brand_queries),
+            )
 
         search_terms_generated.extend(brand_queries)
         search_terms_generated.extend(market_queries)
