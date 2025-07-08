@@ -349,7 +349,38 @@ This epic covers the final but critical steps to transform the application from 
 * [x] **Apply Cache Decorator:** Apply the `@lru_cache(maxsize=128)` decorator to the primary processing function (`evaluate_content`) in `app/openai_evaluator.py`. This will automatically cache results based on the function's arguments.
 * [x] **Add Logging for Cache Hits:** (Optional but recommended) Add a log message to show when a result is being served from the cache versus a live API call to make it clear during the demo that the optimization is working.
 
+## **Sprint Goal: update email reporting**
 
+### **Enhance the AI agent's reporting capabilities by implementing a comprehensive new email summary template that categorizes scraped links, includes detailed prompt engineering metadata, and logs content scraping activity, along with updating this README.md to reflect these new features.**
+
+### **Sprint To-Dos**
+
+### Here's a breakdown of the tasks to achieve our sprint goal:
+
+#### **1\. Update app/email\_sender.py for New Email Template**
+- [ ] ### Modify the send\_summary\_email method to construct the new email template.
+- [ ] ### The method should accept on\_brand\_specific\_links and brand\_relevant\_links as distinct parameters.
+- [ ] ### Format on\_brand\_specific\_links to include "Yes, it was helpful\! | No, it was not helpful." feedback options alongside each link.
+- [ ] ### Simply list brand\_relevant\_links.
+- [ ] ### The method should accept brand\_system\_prompt, market\_system\_prompt, user\_prompt, and search\_terms\_generated as parameters.
+- [ ] ### Dynamically insert these prompt engineering metadata values into the new section of the email.
+- [ ] ### The method should accept num\_search\_calls, search\_times, and content\_summaries as parameters.
+- [ ] ### Dynamically insert these content scraping activity values into the new section, formatting search\_times and content\_summaries for readability.
+- [ ] ### Ensure the EmailSender initialization or send\_summary\_email signature can accommodate all these new data points.
+
+#### **2\. Update app/agent.py to Collect and Pass All Required Data**
+- [ ] ### **Data Collection:** Capture the exact brand\_system\_prompt, market\_system\_prompt, and user\_prompt used during execution. Collect search\_terms\_generated after each search tool usage. Implement mechanisms to count num\_search\_calls, record search\_times (timestamps), and collect all content\_summaries during the agent's run. Refine OpenAIEvaluator result processing to explicitly categorize links into on\_brand\_specific\_links and brand\_relevant\_links.
+- [ ] ### **Data Passing:** Modify the call to EmailSender().send\_summary\_email(...) to pass all the newly collected data (categorized links, prompt metadata, scraping activity) as arguments.
+
+#### **3\. Update README.md (This File\!)**
+- [ ] ### Add a new section (e.g., "Email Summary Report Structure") describing the automated email's layout and content.
+- [ ] ### Explain the distinction between "on brand specific" and "brand relevant but not brand specific" links.
+- [ ] ### Detail the purpose of the "Prompt Engineering Metadata" and "Content Scraped Since last email" sections.
+- [ ] ### Include a small example snippet of the new email format.
+
+#### **4\. Implement/Update Tests**
+- [ ] ### **tests/test\_email\_sender.py:** Add a new test case (test\_send\_summary\_email\_new\_template) that mocks smtplib and verifies the email body's structure and content against the new template, including all new sections and feedback link formatting.
+- [ ] ### **tests/test\_end\_to\_end.py (or new integration tests):** Create an integration test simulating a simplified agent run. Mock EmailSender.send\_summary\_email to inspect its received arguments. Assert that the mocked method was called with the correct structure and content for all new data points (categorized links, prompt metadata, scraping activity).
 
 ## General TODOs
 - [x] Initialize FastAPI project structure (`app/main.py`, `app/routes.py`).
