@@ -12,7 +12,9 @@ log = structlog.get_logger()
 def load_brand_config(brand_id: str, brand_repo_path: Optional[str] = None) -> Optional[Dict[str, Any]]:
     """Load configuration for a specific brand from the YAML repository."""
     settings = get_settings()
-    repo_path = brand_repo_path or getattr(settings, "brand_repo_path", "dev-research/brand_repo.yaml")
+    repo_path = brand_repo_path or getattr(
+        settings, "brand_repo_path", "dev-research/debonair_brand.yaml"
+    )
     if not os.path.exists(repo_path):
         log.error("Brand repository not found", path=repo_path)
         return None
