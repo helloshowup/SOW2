@@ -7,61 +7,103 @@ from email.mime.text import MIMEText
 
 log = structlog.get_logger()
 
-SMTP_SERVER = os.getenv("SMTP_SERVER")
-SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
-SMTP_USERNAME = os.getenv("SMTP_USERNAME")
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
-SENDER_EMAIL = os.getenv("SENDER_EMAIL")
-RECEIVER_EMAIL = os.getenv("RECEIVER_EMAIL", "recipient@example.com")
 
-if not all([SMTP_SERVER, SMTP_USERNAME, SMTP_PASSWORD, SENDER_EMAIL, RECEIVER_EMAIL]):
-    log.critical(
-        "Email configuration missing. SMTP functions will not work.",
-        smtp_server=bool(SMTP_SERVER),
-        smtp_username=bool(SMTP_USERNAME),
-        smtp_password=bool(SMTP_PASSWORD),
-        sender_email=bool(SENDER_EMAIL),
-        receiver_email=bool(RECEIVER_EMAIL),
-    )
+class EmailSender:
+    """Utility class for sending HTML summary emails."""
+
+    def __init__(
+        self,
+        smtp_server: str | None = None,
+        smtp_port: int | None = None,
+        username: str | None = None,
+        password: str | None = None,
+        sender_email: str | None = None,
+        receiver_email: str | None = None,
+    ) -> None:
+        self.smtp_server = smtp_server or os.getenv("SMTP_SERVER")
+        self.smtp_port = int(smtp_port or os.getenv("SMTP_PORT", 587))
+        self.username = username or os.getenv("SMTP_USERNAME")
+        self.password = password or os.getenv("SMTP_PASSWORD")
+        self.sender_email = sender_email or os.getenv("SENDER_EMAIL")
+        self.receiver_email = receiver_email or os.getenv(
+            "RECEIVER_EMAIL", "recipient@example.com"
+        )
+
+        if not all(
+            [
+                self.smtp_server,
+                self.username,
+                self.password,
+                self.sender_email,
+                self.receiver_email,
+            ]
+        ):
+            log.critical(
+                "Email configuration missing. SMTP functions will not work.",
+                smtp_server=bool(self.smtp_server),
+                smtp_username=bool(self.username),
+                smtp_password=bool(self.password),
+                sender_email=bool(self.sender_email),
+                receiver_email=bool(self.receiver_email),
+            )
+
+    def _build_html(self, top_five_results: list[dict], run_id: int) -> str:
+        """Return HTML body for the summary email."""
+        items = "".join(
+            f"<li><strong>{i+1}. {r.get('item', 'N/A')}</strong> (Score: {r.get('score', 'N/A'):.2f})</li>"
+            for i, r in enumerate(top_five_results)
+        )
+        return (
+            f"<html>"
+            f"<body style=\"font-family: Arial, sans-serif; line-height:1.4;\">"
+            f"<h2 style=\"color:#333;\">AI Agent Daily Summary - Run {run_id}</h2>"
+            f"<p>Here are the top 5 results from the latest agent run:</p>"
+            f"<ul>{items}</ul>"
+            f"<p>"
+            f"<a href='http://localhost:8000/feedback?run_id={run_id}&feedback=yes'>Yes, it was helpful!</a> | "
+            f"<a href='http://localhost:8000/feedback?run_id={run_id}&feedback=no'>No, it was not helpful.</a>"
+            f"</p>"
+            f"</body></html>"
+        )
+
+    def send_summary_email(self, top_five_results: list[dict], run_id: int) -> None:
+        """Send an email summary with basic HTML styling."""
+        if not all(
+            [
+                self.smtp_server,
+                self.username,
+                self.password,
+                self.sender_email,
+                self.receiver_email,
+            ]
+        ):
+            log.error("Email configuration is incomplete. Skipping email sending.")
+            return
+
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = f"AI Agent Daily Summary - Run {run_id}"
+        msg["From"] = self.sender_email
+        msg["To"] = self.receiver_email
+
+        html_content = self._build_html(top_five_results, run_id)
+        msg.attach(MIMEText(html_content, "html"))
+
+        context = ssl.create_default_context()
+        try:
+            with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
+                server.starttls(context=context)
+                server.login(self.username, self.password)
+                server.send_message(msg)
+            log.info(
+                "Email summary sent successfully",
+                run_id=run_id,
+                recipient=self.receiver_email,
+            )
+        except Exception as e:  # pragma: no cover - network failures
+            log.error("Failed to send email summary", exc_info=e, run_id=run_id)
+
 
 def send_summary_email(top_five_results: list[dict], run_id: int) -> None:
-    """Send an email summary of the top five results with feedback links."""
-    if not all([SMTP_SERVER, SMTP_USERNAME, SMTP_PASSWORD, SENDER_EMAIL, RECEIVER_EMAIL]):
-        log.error("Email configuration is incomplete. Skipping email sending.")
-        return
+    """Backward-compatible wrapper for EmailSender."""
+    EmailSender().send_summary_email(top_five_results, run_id)
 
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = f"AI Agent Daily Summary - Run {run_id}"
-    msg["From"] = SENDER_EMAIL
-    msg["To"] = RECEIVER_EMAIL
-
-    html_content = f"""
-    <html>
-        <body>
-            <h2>AI Agent Daily Summary - Run {run_id}</h2>
-            <p>Here are the top 5 results from the latest agent run:</p>
-            <ul>
-    """
-    for i, result in enumerate(top_five_results):
-        html_content += f"<li><strong>{i+1}. {result.get('item', 'N/A')}</strong> (Score: {result.get('score', 'N/A'):.2f})</li>"
-    html_content += f"""
-            </ul>
-            <h3>Was this summary helpful?</h3>
-            <p>
-                <a href=\"http://localhost:8000/feedback?run_id={run_id}&feedback=yes\">Yes, it was helpful!</a> |
-                <a href=\"http://localhost:8000/feedback?run_id={run_id}&feedback=no\">No, it was not helpful.</a>
-            </p>
-        </body>
-    </html>
-    """
-    msg.attach(MIMEText(html_content, "html"))
-
-    context = ssl.create_default_context()
-    try:
-        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
-            server.starttls(context=context)
-            server.login(SMTP_USERNAME, SMTP_PASSWORD)
-            server.send_message(msg)
-        log.info("Email summary sent successfully", run_id=run_id, recipient=RECEIVER_EMAIL)
-    except Exception as e:
-        log.error("Failed to send email summary", exc_info=e, run_id=run_id)

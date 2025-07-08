@@ -39,10 +39,27 @@ def test_receive_feedback():
         session.refresh(run)
         run_id = run.id
 
-    resp = client.post("/feedback", params={"run_id": run_id, "feedback": "yes"})
+    resp = client.post("/feedback", json={"run_id": run_id, "feedback": "yes"})
     assert resp.status_code == 200
 
     with Session(engine) as session:
         fb = session.exec(select(Feedback).where(Feedback.run_id == run_id)).first()
         assert fb is not None
         assert fb.value == "yes"
+
+
+def test_receive_feedback_get():
+    with Session(engine) as session:
+        run = AgentRun(status="completed")
+        session.add(run)
+        session.commit()
+        session.refresh(run)
+        run_id = run.id
+
+    resp = client.get("/feedback", params={"run_id": run_id, "feedback": "no"})
+    assert resp.status_code == 200
+
+    with Session(engine) as session:
+        fb = session.exec(select(Feedback).where(Feedback.run_id == run_id).order_by(Feedback.id.desc())).first()
+        assert fb is not None
+        assert fb.value == "no"
