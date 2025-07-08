@@ -36,7 +36,7 @@ A minimal backend setup for running an AI agent every 10 minutes, persisting res
 
 ## Configuration
 
-All configuration values are read from environment variables. See `.env.example` for reference.
+All configuration values are read from environment variables. See `.env.example` for reference. Typical variables include `DATABASE_URL`, `LOG_LEVEL`, `REDIS_URL`, and `AGENT_RUN_INTERVAL_MINUTES` for the scheduler frequency.
 
 ## Architecture
 
@@ -87,7 +87,8 @@ CREATE TABLE agent_runs (
 
 ## Running the Scheduler
 
-* **APScheduler (in-app)**: configured in `scheduler.py`. Auto-start with the FastAPI app.
+The scheduler runs inside the FastAPI process using **APScheduler**. It is configured in `app/main.py` to call the `/run-agent` endpoint every `AGENT_RUN_INTERVAL_MINUTES` (default 10).
+
 * **Cron job** (alternative):
 
   ```cron
@@ -123,25 +124,77 @@ findings.
 6. Provide a lightweight endpoint to store yes/no feedback in SQLite.
 7. Document how to run the scheduler, worker, and overall environment setup.
 
+## Sprint 2: Proof of Concept Plan
+
+Sprint Goal: To deliver a functional proof of concept that automatically scrapes a small sample of the internet for interesting content relevant to the brand (as outlined in `dev-research/research_workflow_doc.md`). Search terms should be chosen with lateral thinking using cues from `dev-research/brand_repo.yaml`. The workflow will evaluate results with OpenAI and send a summary email with feedback links.
+
+Throughout this sprint, refer to the curated links in the `dev-research` folder whenever they help accomplish Sprint 2 tasks. These external domains have been whitelisted in the Codex environment so the agent can open them if additional context is required.
+
+### Week 1: Core Feature Implementation
+Focus: OpenAI Evaluation & Email Module (Estimated 5-8 hours)
+
+- **Mon** Implement the `OpenAIEvaluator` class based on the provided code example.
+  - Integrate the `openai` Python library.
+  - Implement the `evaluate_text` method.
+- **Tue** Develop a secure method for managing the OpenAI API key.
+  - Use environment variables (`python-dotenv`) or a similar secrets management tool.
+  - Update the configuration in `app/config.py` to load the key.
+- **Wed** Implement the `EmailSender` class using the `smtplib` and `email` modules.
+  - Create a basic HTML template for the email body.
+  - Parameterize the template to accept the list of evaluated mentions.
+- **Thu** Refine the HTML email for better readability and presentation.
+  - Add basic styling (CSS) to the HTML for a professional look.
+- **Fri** Conduct initial tests of the `EmailSender` with a mock email service to ensure emails are sent and formatted correctly.
+
+Focus: Feedback Handling (Estimated 2-3 hours)
+
+- **Fri** Implement the FastAPI feedback endpoint (`/feedback`) in `app/routes.py`.
+  - Define the Pydantic model for the feedback data.
+  - Create the database model for storing feedback in a separate SQLite database.
+
+### Week 2: Integration, Testing & Finalization
+Focus: Integration & End-to-End Workflow (Estimated 6-10 hours)
+
+- **Mon** Integrate the `OpenAIEvaluator` and `EmailSender` into the main worker process in `app/worker.py`.
+  - The worker should now perform the full sequence: scrape -> evaluate -> send email.
+- **Tue** Connect the feedback endpoint to the main application and test the feedback loop.
+  - Ensure that clicking a link in the email triggers the endpoint and saves the feedback.
+- **Wed** Write unit tests for the new modules.
+  - Create `tests/test_openai_evaluator.py` with mock API calls.
+  - Create `tests/test_email_sender.py` to verify email construction.
+  - Create `tests/test_feedback_routes.py` to test the feedback endpoint.
+- **Thu** Perform comprehensive end-to-end testing of the entire system.
+  - Run the scheduled job and verify the workflow from start to finish.
+  - Check database entries, email content, and feedback logging.
+- **Fri** Code cleanup, documentation updates, and final review before sprint conclusion.
+  - Ensure the `README.md` reflects the final PoC state.
+  - Add comments where necessary to clarify complex logic.
 ## TODOs
 
 ### Branch `backend-infra`
 
-- [ ] Initialize FastAPI project structure (`app/main.py`, `app/routes.py`).
-- [ ] Define `AgentRun` model with SQLModel and auto-create tables.
-- [ ] Set up environment configuration loader (`python-dotenv`) and structured logging (`structlog`).
-- [ ] Configure Redis with RQ and create the worker scaffold.
-- [ ] Schedule `/run-agent` using APScheduler to enqueue jobs.
-- [ ] Document scheduler setup and required environment variables.
+- [x] Initialize FastAPI project structure (`app/main.py`, `app/routes.py`).
+- [x] Define `AgentRun` model with SQLModel and auto-create tables.
+- [x] Set up environment configuration loader (`python-dotenv`) and structured logging (`structlog`).
+- [x] Configure Redis with RQ and create the worker scaffold.
+- [x] Schedule `/run-agent` using APScheduler to enqueue jobs.
+- [x] Document scheduler setup and required environment variables.
 
-### Branch `scraper-email`
+-### Branch `scraper-email`
 
-- [ ] Build scraping module (`scraper.py`) with retry logic.
-- [ ] Load brand configuration from `dev-research/brand_repo.yaml`.
-- [ ] Implement evaluation module using the OpenAI API.
-- [ ] Compose summary email and send via SMTP with feedback links.
-- [ ] Implement feedback receiver storing responses in SQLite.
-- [ ] Write unit tests for scraping and email modules.
+- [x] Build scraping module (`scraper.py`) with retry logic to gather a short sample of the internet (about 10 minutes of crawling as described in `dev-research/research_workflow_doc.md`) for interesting content relevant to the brand. Use lateral thinking when choosing search terms from `dev-research/brand_repo.yaml`.
+- [x] Load brand configuration from `dev-research/brand_repo.yaml`.
+- [x] Construct `debonair` brand YAML for testing using the values in `dev-research/brand_repo.yaml` (`dev-research/debonair_brand.yaml`).
+- [x] Implement evaluation module using the OpenAI API (`app/openai_evaluator.py`).
+- [x] Compose summary email and send via SMTP with feedback links.
+- [x] Implement feedback receiver storing responses in SQLite.
+- [x] Write unit tests for scraping and email modules.
+- [ ] Securely load OpenAI API key via app/config.py
+- [ ] Implement EmailSender class with HTML template and styling.
+- [ ] Add /feedback endpoint and SQLite model.
+- [ ] Integrate evaluator and email sender into app/worker.py.
+- [ ] Unit tests for evaluator, feedback routes, and end-to-end workflow.
+- [ ] Documentation updates and final cleanup.
 
 ## **Coding Practices**
 
@@ -155,8 +208,10 @@ findings.
    Break logic into small, well-named functions. Each should do one thing so that even a non-coder can read the names and understand what the program is trying to do.  
 4. Use clear, user-friendly logging  
    Combine fail-fast checks with simple log messages that explain what to fix (“SMTP credentials missing” or “Redis not reachable”). Avoid overly technical jargon so that it’s easy to diagnose problems without digging into the code.  
-5. Document how to run and test  
+5. Document how to run and test
    Provide step-by-step instructions in the README for starting the scheduler and how to see logs when something goes wrong. This supports a non-coder who may need to troubleshoot issues.
+6. Consult dev-research links when relevant
+   The `dev-research` folder lists articles and repositories that demonstrate best practices. These sites have been whitelisted in the Codex environment, so reference them whenever they directly support Sprint 2 objectives.
 
 
 ## License
