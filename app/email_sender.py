@@ -47,18 +47,34 @@ class EmailSender:
                 receiver_email=bool(self.receiver_email),
             )
 
-    def _build_html(self, top_five_results: list[dict], run_id: int) -> str:
+    def _build_html(self, results: dict[str, list[dict]], run_id: int) -> str:
         """Return HTML body for the summary email."""
-        items = "".join(
-            f"<li><strong>{i+1}. {r.get('item', 'N/A')}</strong> (Score: {r.get('score', 'N/A'):.2f})</li>"
-            for i, r in enumerate(top_five_results)
+
+        def list_items(items: list[dict]) -> str:
+            if not items:
+                return "<li>No results found.</li>"
+            return "".join(
+                (
+                    f"<li><strong>{i+1}. {r.get('item', 'N/A')}</strong> "
+                    f"(Score: {r.get('score', 'N/A'):.2f})</li>"
+                )
+                for i, r in enumerate(items)
+            )
+
+        brand_section = (
+            f"<h3>Brand Health Report</h3>"
+            f"<ul>{list_items(results.get('brand_health', []))}</ul>"
         )
+        market_section = (
+            f"<h3>Market Intelligence Briefing</h3>"
+            f"<ul>{list_items(results.get('market_intelligence', []))}</ul>"
+        )
+
         return (
             f"<html>"
             f"<body style=\"font-family: Arial, sans-serif; line-height:1.4;\">"
             f"<h2 style=\"color:#333;\">AI Agent Daily Summary - Run {run_id}</h2>"
-            f"<p>Here are the top 5 results from the latest agent run:</p>"
-            f"<ul>{items}</ul>"
+            f"{brand_section}{market_section}"
             f"<p>"
             f"<a href='http://localhost:8000/feedback?run_id={run_id}&feedback=yes'>Yes, it was helpful!</a> | "
             f"<a href='http://localhost:8000/feedback?run_id={run_id}&feedback=no'>No, it was not helpful.</a>"
@@ -66,7 +82,7 @@ class EmailSender:
             f"</body></html>"
         )
 
-    def send_summary_email(self, top_five_results: list[dict], run_id: int) -> None:
+    def send_summary_email(self, results: dict[str, list[dict]], run_id: int) -> None:
         """Send an email summary with basic HTML styling."""
         if not all(
             [
@@ -85,7 +101,7 @@ class EmailSender:
         msg["From"] = self.sender_email
         msg["To"] = self.receiver_email
 
-        html_content = self._build_html(top_five_results, run_id)
+        html_content = self._build_html(results, run_id)
         msg.attach(MIMEText(html_content, "html"))
 
         context = ssl.create_default_context()
@@ -103,7 +119,7 @@ class EmailSender:
             log.error("Failed to send email summary", exc_info=e, run_id=run_id)
 
 
-def send_summary_email(top_five_results: list[dict], run_id: int) -> None:
+def send_summary_email(results: dict[str, list[dict]], run_id: int) -> None:
     """Backward-compatible wrapper for EmailSender."""
-    EmailSender().send_summary_email(top_five_results, run_id)
+    EmailSender().send_summary_email(results, run_id)
 

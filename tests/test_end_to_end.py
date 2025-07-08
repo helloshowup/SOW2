@@ -46,6 +46,6 @@ def test_end_to_end(monkeypatch):
     with Session(engine) as session:
         updated = session.get(AgentRun, run_id)
         assert updated.status == "completed"
-        assert updated.result["evaluations"][0]["summary"] == "great"
+        assert updated.result["brand_health"][0]["summary"] == "great"
     assert sent["run_id"] == run_id
-    assert sent["results"][0]["item"] == "great"
+    assert sent["results"]["brand_health"][0]["item"] == "great"
