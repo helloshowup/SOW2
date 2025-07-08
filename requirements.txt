@@ -1,0 +1,21 @@
+# For the web server and API
+fastapi
+uvicorn[standard]
+
+# For the database connection
+sqlalchemy
+psycopg2-binary
+
+# For the web scraper
+requests
+beautifulsoup4
+
+# For the AI evaluator
+openai
+instructor
+
+# For the email service
+python-dotenv
+
+# For testing
+pytest

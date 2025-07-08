@@ -1,8 +1,10 @@
+import os
 import types
 from sqlmodel import SQLModel, Session, create_engine
 from sqlalchemy.pool import StaticPool
 
-from app.models import AgentRun
+os.environ["OPENAI_API_KEY"] = "test"
+from app.models import AgentRun, AnalysisResult, SentimentAnalysis
 from sqlalchemy.types import JSON
 import app.database as database
 import app.worker as worker
@@ -24,7 +26,11 @@ def test_end_to_end(monkeypatch):
     monkeypatch.setattr(scraper.SimpleScraper, "crawl", lambda self, terms: [{"url": "http://example.com", "text": "pizza"}])
 
     async def fake_eval(text, config, task_type):
-        return {"summary": "great"}
+        return AnalysisResult(
+            summary="great",
+            sentiment=SentimentAnalysis(overall_sentiment="positive", score=0.9),
+            entities=[],
+        )
     monkeypatch.setattr(worker, "evaluate_content", fake_eval)
 
     sent = {}
