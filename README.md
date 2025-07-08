@@ -12,6 +12,7 @@ An automated backend for running AI agents on a schedule. It scrapes the web usi
 * [Workflow](#workflow)
 * [Running the Scheduler](#running-the-scheduler)
 * [Logging & Monitoring](#logging--monitoring)
+* [Email Summary Report Structure](#email-summary-report-structure)
 * [Sprint Plan](#sprint-plan)
 * [TODOs](#todos)
 * [Coding Practices](#coding-practices)
@@ -103,6 +104,37 @@ This can be used by Docker or orchestration tools to confirm the service is runn
 * Structured logs via `structlog` (JSON output for ELK).
 * Log rotation: `logging.handlers.RotatingFileHandler`.
 * Optional: forward logs to Elasticsearch/Kibana.
+
+## Email Summary Report Structure
+
+The automated summary email sent after each agent run contains four sections:
+1. **On brand specific links** - links that explicitly mention the brand. Each item includes "Yes, it was helpful! | No, it was not helpful." feedback options.
+2. **Brand relevant but not brand specific links** - industry news or tangential mentions that may still be valuable.
+3. **Prompt Engineering Metadata** - shows the exact prompts and search terms used so you can trace how the AI was instructed.
+4. **Content Scraped Since last email** - logs scraping activity including the number of search calls, the timestamps of each search, and summaries of the pages visited.
+
+Example:
+```
+Hi there,
+
+Below are links that the AI thinks are on brand specific
+http://brand.com (Yes, it was helpful! | No, it was not helpful.)
+
+Below are 3 links that AI thinks are brand relevant but not brand specific
+http://relevant.com
+
+Prompt Engineering Metadata
+Brand System Prompt: ...
+Market System Prompt: ...
+User Prompt: ...
+Search Terms Generated: pizza, culture
+
+Content Scraped Since last email
+Number of search calls: 2
+Searches run at: 11:01, 11:05
+Summaries: summary text here
+```
+
 
 ## Sprint Plan
 
@@ -373,10 +405,11 @@ This epic covers the final but critical steps to transform the application from 
 - [x] ### **Data Passing:** Modify the call to EmailSender().send\_summary\_email(...) to pass all the newly collected data (categorized links, prompt metadata, scraping activity) as arguments.
 
 #### **3\. Update README.md (This File\!)**
-- [ ] ### Add a new section (e.g., "Email Summary Report Structure") describing the automated email's layout and content.
-- [ ] ### Explain the distinction between "on brand specific" and "brand relevant but not brand specific" links.
-- [ ] ### Detail the purpose of the "Prompt Engineering Metadata" and "Content Scraped Since last email" sections.
-- [ ] ### Include a small example snippet of the new email format.
+- [x] ### Add a new section (e.g., "Email Summary Report Structure") describing the automated email's layout and content.
+- [x] ### Explain the distinction between "on brand specific" and "brand relevant but not brand specific" links.
+- [x] ### Detail the purpose of the "Prompt Engineering Metadata" and "Content Scraped Since last email" sections.
+- [x] ### Include a small example snippet of the new email format.
+- [x] **Work Completed:** README updated with email summary report structure.
 
 #### **4\. Implement/Update Tests**
 - [ ] ### **tests/test\_email\_sender.py:** Add a new test case (test\_send\_summary\_email\_new\_template) that mocks smtplib and verifies the email body's structure and content against the new template, including all new sections and feedback link formatting.
