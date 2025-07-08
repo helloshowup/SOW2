@@ -78,6 +78,12 @@ app.include_router(api_router)
 async def read_root():
     return {"message": "AI Agent Backend"}
 
+# Health check endpoint
+@app.get("/health", status_code=200)
+async def health_check():
+    """Provide simple health status for monitoring."""
+    return {"status": "ok"}
+
 
 @app.post("/run-agent")
 async def run_agent(session: Session = Depends(get_session)):

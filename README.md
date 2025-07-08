@@ -95,6 +95,9 @@ The scheduler runs inside the FastAPI process using **APScheduler**. It is confi
   */10 * * * * curl -X POST http://localhost:8000/run-agent
   ```
 
+The API also exposes a `/health` endpoint that simply returns `{"status": "ok"}`.
+This can be used by Docker or orchestration tools to confirm the service is running.
+
 ## Logging & Monitoring
 
 * Structured logs via `structlog` (JSON output for ELK).
