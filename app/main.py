@@ -1,6 +1,5 @@
 import logging
 import sys
-from datetime import datetime, timedelta
 
 from fastapi import FastAPI, Depends, HTTPException
 from redis import Redis
@@ -9,12 +8,11 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 import structlog
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
-from apscheduler.triggers.date import DateTrigger
+from apscheduler.triggers.cron import CronTrigger
 import httpx
 
 from .config import get_settings
 from .database import get_session, init_db
-from .daily_email_compiler import compile_and_send_daily_email
 
 from .routes import router as api_router
 from .models import AgentRun
@@ -48,9 +46,28 @@ async def trigger_run_agent() -> None:
         async with httpx.AsyncClient() as client:
             response = await client.post("http://localhost:8000/run-agent")
             response.raise_for_status()
-            log.info("Scheduled run-agent trigger succeeded", status_code=response.status_code)
+            log.info(
+                "Scheduled run-agent trigger succeeded",
+                status_code=response.status_code,
+            )
     except Exception as exc:
-        log.error("Scheduled run-agent trigger failed", error=str(exc), exc_info=True)
+        log.error(
+            "Scheduled run-agent trigger failed", error=str(exc), exc_info=True
+        )
+
+# New function to trigger daily email
+async def trigger_daily_email_job() -> None:
+    """Scheduler job that enqueues the daily email compilation task."""
+    log = structlog.get_logger()
+    try:
+        task_queue.enqueue("app.worker.compile_and_send_daily_email")
+        log.info("Daily email compilation job enqueued successfully.")
+    except Exception as exc:
+        log.error(
+            "Failed to enqueue daily email compilation job",
+            error=str(exc),
+            exc_info=True,
+        )
 
 
 @app.on_event("startup")
@@ -65,21 +82,21 @@ async def on_startup() -> None:
         replace_existing=True,
         misfire_grace_time=60,
     )
-    now = datetime.now()
-    if now.hour >= 18:
-        next_run_date = datetime(now.year, now.month, now.day, 18, 0, 0) + timedelta(days=1)
-    else:
-        next_run_date = datetime(now.year, now.month, now.day, 18, 0, 0)
     scheduler.add_job(
-        compile_and_send_daily_email,
-        DateTrigger(run_date=next_run_date),
-        id="daily_email_job",
+        trigger_daily_email_job,
+        CronTrigger(
+            hour=settings.daily_email_hour,
+            minute=settings.daily_email_minute,
+        ),
+        id="daily_email_scheduler",
         replace_existing=True,
-        misfire_grace_time=3600,
+        misfire_grace_time=600,
     )
     scheduler.start()
     structlog.get_logger().info(
-        "APScheduler started", interval=settings.agent_run_interval_minutes
+        "APScheduler started",
+        interval=settings.agent_run_interval_minutes,
+        daily_email_time=f"{settings.daily_email_hour:02d}:{settings.daily_email_minute:02d}",
     )
 
 @app.on_event("shutdown")

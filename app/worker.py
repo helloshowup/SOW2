@@ -10,6 +10,7 @@ from .config import get_settings
 from .database import engine
 from .agent import run_agent_iteration
 from .openai_evaluator import evaluate_content
+from .daily_email_compiler import compile_and_send_daily_email as compile_daily_email
 import structlog
 
 # Configure logging for better visibility
@@ -48,6 +49,12 @@ def run_agent_logic(run_id: int, search_request: dict | None = None) -> None:
     if search_request is None:
         search_request = load_search_config()
     asyncio.run(run_agent_iteration(run_id, search_request))
+
+
+def compile_and_send_daily_email() -> None:
+    """Compile and send the daily market intelligence email."""
+    log.info("Starting daily email compilation and sending process")
+    asyncio.run(compile_daily_email())
 
 
 def run_worker() -> None:
