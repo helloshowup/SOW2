@@ -47,11 +47,12 @@ class EmailSender:
                 receiver_email=bool(self.receiver_email),
             )
 
+
     def _build_html(
         self,
         run_id: int,
-        on_brand_specific_links: list[str] | None = None,
-        brand_relevant_links: list[str] | None = None,
+        on_brand_specific_links: list[dict] | None = None,
+        brand_relevant_links: list[dict] | None = None,
         brand_system_prompt: str | None = None,
         market_system_prompt: str | None = None,
         user_prompt: str | None = None,
@@ -62,20 +63,22 @@ class EmailSender:
     ) -> str:
         """Return HTML body for the summary email using the new template."""
 
-        def list_links(links: list[str] | None, include_feedback: bool = False) -> str:
+        def list_links(links: list[dict] | None, include_feedback: bool = False) -> str:
             if not links:
                 return "<li>No links found.</li>"
             items = []
-            for link in links:
+            for item in links:
+                url = item.get("url")
+                heading = item.get("snappy_heading", url)
                 feedback = (
                     (
-                        f" - <a href='http://localhost:8000/feedback?run_id={run_id}&feedback=yes'>Yes, it was helpful!</a> | "
-                        f"<a href='http://localhost:8000/feedback?run_id={run_id}&feedback=no'>No, it was not helpful.</a>"
+                        f" - <a href='http://localhost:8000/feedback?run_id={run_id}&feedback=yes'>Yes 👍, it was helpful!</a> | "
+                        f"<a href='http://localhost:8000/feedback?run_id={run_id}&feedback=no'>No👎, it was not helpful.</a>"
                     )
                     if include_feedback
                     else ""
                 )
-                items.append(f"<li><a href='{link}'>{link}</a>{feedback}</li>")
+                items.append(f"<li><a href='{url}'>{heading}</a>{feedback}</li>")
             return "".join(items)
 
         def list_str(values: list[str] | None) -> str:
@@ -96,9 +99,9 @@ class EmailSender:
             "<html>",
             "<body style='font-family: Arial, sans-serif; line-height:1.4;'>",
             f"<h3>Hi there</h3>",
-            "<h3>Below are links that the AI thinks are on brand specific</h3>",
+            "<h3><strong>Below are links that the AI thinks are on brand specific</strong></h3>",
             f"<ul>{list_links(on_brand_specific_links, include_feedback=True)}</ul>",
-            "<h3>Below are 3 links that AI thinks are brand relevant but not brand specific</h3>",
+            "<h3><strong>Below are 3 links that AI thinks are brand relevant but not brand specific</strong></h3>",
             f"<ul>{list_links(brand_relevant_links)}</ul>",
             "<h3>Prompt Engineering Metadata</h3>",
             f"<p><strong>Brand System Prompt:</strong> {truncate(brand_system_prompt)}</p>",
@@ -119,8 +122,8 @@ class EmailSender:
         self,
         run_id: int,
         *,
-        on_brand_specific_links: list[str] | None = None,
-        brand_relevant_links: list[str] | None = None,
+        on_brand_specific_links: list[dict] | None = None,
+        brand_relevant_links: list[dict] | None = None,
         brand_system_prompt: str | None = None,
         market_system_prompt: str | None = None,
         user_prompt: str | None = None,

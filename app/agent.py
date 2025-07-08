@@ -163,17 +163,24 @@ async def run_agent_iteration(run_id: int, search_request: dict | None = None) -
             url = item["url"]
             snippet = item["snippet"].lower()
             score = item["evaluation"].get("relevance_score", 0)
+            heading = item["evaluation"].get("snappy_heading", "")
 
             if any(term in snippet for term in brand_terms):
-                on_brand_specific_items.append({"url": url, "score": score})
+                on_brand_specific_items.append({"url": url, "score": score, "snappy_heading": heading})
             else:
-                brand_relevant_items.append({"url": url, "score": score})
+                brand_relevant_items.append({"url": url, "score": score, "snappy_heading": heading})
 
         on_brand_specific_items.sort(key=lambda x: x["score"], reverse=True)
         brand_relevant_items.sort(key=lambda x: x["score"], reverse=True)
 
-        on_brand_specific_links = [i["url"] for i in on_brand_specific_items[:max_email_links]]
-        brand_relevant_links = [i["url"] for i in brand_relevant_items[:max_email_links]]
+        on_brand_specific_links = [
+            {"url": i["url"], "snappy_heading": i.get("snappy_heading", "")}
+            for i in on_brand_specific_items[:max_email_links]
+        ]
+        brand_relevant_links = [
+            {"url": i["url"], "snappy_heading": i.get("snappy_heading", "")}
+            for i in brand_relevant_items[:max_email_links]
+        ]
 
         content_summaries = [
             item["evaluation"].get("summary", "")

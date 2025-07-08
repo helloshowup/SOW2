@@ -10,6 +10,7 @@ from app.models import AnalysisResult, SentimentAnalysis
 async def dummy_create(*args, **kwargs):
     return AnalysisResult(
         summary="ok",
+        snappy_heading="Great heading",
         sentiment=SentimentAnalysis(overall_sentiment="positive", score=0.9),
         entities=[],
         relevance_score=100.0,
@@ -34,6 +35,7 @@ async def test_evaluate_content(monkeypatch):
     )
     assert isinstance(result, AnalysisResult)
     assert result.summary == "ok"
+    assert result.snappy_heading == "Great heading"
 
 
 @pytest.mark.asyncio
@@ -52,6 +54,7 @@ async def test_evaluate_content_repair(monkeypatch):
     async def dummy_repair(text: str):
         return AnalysisResult(
             summary="fixed",
+            snappy_heading="Fixed heading",
             sentiment=SentimentAnalysis(overall_sentiment="positive", score=1.0),
             entities=[],
             relevance_score=90.0,
@@ -72,4 +75,5 @@ async def test_evaluate_content_repair(monkeypatch):
         "brand_health",
     )
     assert result.summary == "fixed"
+    assert result.snappy_heading == "Fixed heading"
 

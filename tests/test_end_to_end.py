@@ -50,6 +50,7 @@ def test_end_to_end(monkeypatch):
     async def fake_eval(snippet, config, task_type):
         return AnalysisResult(
             summary="great",
+            snappy_heading="Great",
             sentiment=SentimentAnalysis(overall_sentiment="positive", score=0.9),
             entities=[],
             relevance_score=80.0,
