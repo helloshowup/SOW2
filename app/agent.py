@@ -58,8 +58,11 @@ async def run_agent_iteration(run_id: int, search_request: dict | None = None) -
         market_pages: List[Dict[str, Any]] = []
 
         if search_request:
-            brand_queries = search_request.get("brand_health_queries") or []
-            market_queries = search_request.get("market_intelligence_queries") or []
+            brand_queries = search_request.get(
+                "brand_health_queries",
+                generate_search_terms(keywords),
+            )
+            market_queries = search_request.get("market_intelligence_queries", [])
         else:
             brand_queries = generate_search_terms(keywords)
             market_queries = []
@@ -87,19 +90,51 @@ async def run_agent_iteration(run_id: int, search_request: dict | None = None) -
             market_evals = await _process_batch(market_pages, brand_config, "market_intelligence")
 
         brand_terms = [brand_config.get("display_name", "").lower()] + [k.lower() for k in keywords]
-        on_brand_specific_links: List[str] = []
-        brand_relevant_links: List[str] = []
+
+        # limit for number of links to send
+        max_email_links = search_request.get("max_email_links", 10) if search_request else 10
+
+        evaluated_pages_with_scores: List[Dict[str, Any]] = []
         all_pages = brand_pages + market_pages
         all_evals = brand_evals + market_evals
         for page, res in zip(all_pages, all_evals):
-            snippet = page.get("snippet", "").lower()
-            url = page.get("url")
-            if any(term in snippet for term in brand_terms):
-                on_brand_specific_links.append(url)
-            else:
-                brand_relevant_links.append(url)
+            if (
+                res
+                and page.get("url")
+                and "relevance_score" in res
+                and "categories" in res
+            ):
+                evaluated_pages_with_scores.append(
+                    {
+                        "url": page.get("url"),
+                        "snippet": page.get("snippet", ""),
+                        "evaluation": res,
+                    }
+                )
 
-        content_summaries = [ev.get("summary", "") for ev in all_evals]
+        on_brand_specific_items: List[Dict[str, Any]] = []
+        brand_relevant_items: List[Dict[str, Any]] = []
+
+        for item in evaluated_pages_with_scores:
+            url = item["url"]
+            snippet = item["snippet"].lower()
+            score = item["evaluation"].get("relevance_score", 0)
+
+            if any(term in snippet for term in brand_terms):
+                on_brand_specific_items.append({"url": url, "score": score})
+            else:
+                brand_relevant_items.append({"url": url, "score": score})
+
+        on_brand_specific_items.sort(key=lambda x: x["score"], reverse=True)
+        brand_relevant_items.sort(key=lambda x: x["score"], reverse=True)
+
+        on_brand_specific_links = [i["url"] for i in on_brand_specific_items[:max_email_links]]
+        brand_relevant_links = [i["url"] for i in brand_relevant_items[:max_email_links]]
+
+        content_summaries = [
+            item["evaluation"].get("summary", "")
+            for item in evaluated_pages_with_scores
+        ]
         user_prompt = all_pages[0]["snippet"] if all_pages else ""
         brand_system_prompt = _construct_prompt_messages("brand_health", brand_config, "")[0]["content"]
         market_system_prompt = _construct_prompt_messages("market_intelligence", brand_config, "")[0]["content"]
