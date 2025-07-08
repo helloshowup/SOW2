@@ -41,11 +41,10 @@ def setup_module(module):
 
 
 def test_end_to_end(monkeypatch):
-    monkeypatch.setattr(
-        scraper.SimpleScraper,
-        "crawl",
-        lambda self, terms: [{"url": "http://example.com", "snippet": "pizza"}],
-    )
+    async def fake_crawl(self, session, terms, max_results=5):
+        return [{"url": "http://example.com", "snippet": "pizza"}]
+
+    monkeypatch.setattr(scraper.SimpleScraper, "crawl", fake_crawl)
 
     async def fake_eval(snippet, config, task_type):
         return AnalysisResult(

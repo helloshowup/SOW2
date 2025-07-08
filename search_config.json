@@ -10,6 +10,16 @@
     "emerging competitor ",
     "new technology",
     "impact of regulation"
+  ],
+  "blacklisted_domains": [
+    "wikipedia.org",
+    "yourbrandhomepage.com"
+  ],
+  "rotating_search_phrases": [
+    "latest news",
+    "breakthrough",
+    "analysis",
+    "case study"
   ]
 }
 

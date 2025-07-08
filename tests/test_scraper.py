@@ -21,7 +21,11 @@ def test_load_brand_keywords():
     assert 'interactive' in keywords
 
 
-def test_simple_scraper_search_and_crawl(monkeypatch):
+import asyncio
+
+
+@pytest.mark.asyncio
+async def test_simple_scraper_search_and_crawl(monkeypatch):
     class Dummy:
         def __init__(self, url, title, description):
             self.url = url
@@ -36,10 +40,13 @@ def test_simple_scraper_search_and_crawl(monkeypatch):
         ]
 
     monkeypatch.setattr(scraper, 'google_search', fake_search)
+    async def fake_is_url_visited(self, session, url):
+        return False
+    monkeypatch.setattr(scraper.SimpleScraper, '_is_url_visited', fake_is_url_visited)
 
     s = scraper.SimpleScraper()
 
-    results = s.search('test', max_results=2)
+    results = await s.search(None, 'test', max_results=2)
     assert results == [
         {
             'url': 'http://example.com/1',
@@ -55,11 +62,12 @@ def test_simple_scraper_search_and_crawl(monkeypatch):
         },
     ]
 
-    pages = s.crawl(['test'], max_results=2)
+    pages = await s.crawl(None, ['test'], max_results=2)
     assert pages == results
 
 
-def test_simple_scraper_skips_invalid_results(monkeypatch):
+@pytest.mark.asyncio
+async def test_simple_scraper_skips_invalid_results(monkeypatch):
     class Dummy:
         def __init__(self, url, title, description):
             self.url = url
@@ -74,9 +82,12 @@ def test_simple_scraper_skips_invalid_results(monkeypatch):
         ]
 
     monkeypatch.setattr(scraper, 'google_search', fake_search)
+    async def fake_is_url_visited(self, session, url):
+        return False
+    monkeypatch.setattr(scraper.SimpleScraper, '_is_url_visited', fake_is_url_visited)
 
     s = scraper.SimpleScraper()
-    results = s.search('whatever', max_results=3)
+    results = await s.search(None, 'whatever', max_results=3)
     assert results == [
         {
             'url': 'http://ok.com',
