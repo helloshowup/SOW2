@@ -1,0 +1,16 @@
+name: Smoke Test
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  run-smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Ensure smoke_test.sh is executable
+        run: chmod +x ./smoke_test.sh
+      - name: Run smoke tests
+        run: ./smoke_test.sh
+
