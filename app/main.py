@@ -14,7 +14,7 @@ import httpx
 from .config import get_settings
 from .database import get_session, init_db
 
-from .routes import router as api_router
+from .routes import router as api_router, admin_router
 from .models import AgentRun
 
 settings = get_settings()
@@ -104,6 +104,7 @@ def on_shutdown() -> None:
     scheduler.shutdown()
 
 app.include_router(api_router)
+app.include_router(admin_router)  # Include the new admin router
 
 # Default root path
 @app.get("/")
