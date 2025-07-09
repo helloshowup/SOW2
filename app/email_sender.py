@@ -72,8 +72,9 @@ class EmailSender:
             settings = get_settings()
             base = settings.app_base_url.rstrip("/")
             for item in links:
-                url = item.get("url")
-                heading = item.get("snappy_heading", url)
+                url = item.get("link") or item.get("url")
+                headline = item.get("headline") or item.get("snappy_heading", url)
+                emoji = item.get("emoji", "")
                 feedback = (
                     (
                         f" - <a href='{base}/feedback?run_id={run_id}&feedback=yes'>Yes 👍, it was helpful!</a> | "
@@ -82,7 +83,9 @@ class EmailSender:
                     if include_feedback
                     else ""
                 )
-                items.append(f"<li><a href='{url}'>{heading}</a>{feedback}</li>")
+                items.append(
+                    f"<li>{emoji} <a href='{url}'>{headline}</a>{feedback}</li>"
+                )
             return "".join(items)
 
         def list_str(values: list[str] | None) -> str:

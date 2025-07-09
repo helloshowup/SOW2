@@ -46,7 +46,6 @@ async def test_evaluate_content_repair(monkeypatch):
         "banned_words": ["foo"],
         "tone": {"persona": "friendly", "style_guide": "casual"},
     }
-
     async def failing_create(*args, **kwargs):
         assert kwargs.get("max_retries") == 2
         raise Exception("bad json")
@@ -76,4 +75,27 @@ async def test_evaluate_content_repair(monkeypatch):
     )
     assert result.summary == "fixed"
     assert result.snappy_heading == "Fixed heading"
+
+
+@pytest.mark.asyncio
+async def test_evaluate_snippets_for_brand_fit(monkeypatch):
+    async def dummy_create(*args, **kwargs):
+        return openai_evaluator.EvaluatedSnippet(
+            emoji="\U0001F389",
+            headline="Party time",
+            link="http://example.com",
+        )
+
+    monkeypatch.setattr(openai_evaluator, "OPENAI_API_KEY", "test")
+    monkeypatch.setattr(
+        openai_evaluator.client.chat.completions,
+        "create",
+        dummy_create,
+    )
+
+    result = await openai_evaluator.evaluate_snippets_for_brand_fit(
+        "http://example.com", "text"
+    )
+    assert isinstance(result, openai_evaluator.EvaluatedSnippet)
+    assert result.headline == "Party time"
 

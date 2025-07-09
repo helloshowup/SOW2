@@ -10,6 +10,7 @@ import structlog
 
 from .config import get_settings
 from .models import AnalysisResult
+from pydantic import BaseModel, Field
 
 log = structlog.get_logger()
 
@@ -34,6 +35,14 @@ client.on(
     HookName.COMPLETION_LAST_ATTEMPT,
     lambda e: log.error("All retries exhausted", error=str(e)),
 )
+
+
+class EvaluatedSnippet(BaseModel):
+    """Simplified summary used for daily emails."""
+
+    emoji: str = Field(description="Relevant emoji for quick context")
+    headline: str = Field(description="One sentence summary of the content")
+    link: str = Field(description="URL associated with the content")
 
 
 def alru_cache(maxsize: int = 128):
@@ -106,6 +115,34 @@ def _construct_prompt_messages(
 
     messages.append({"role": "user", "content": user_input})
     return messages
+
+
+async def evaluate_snippets_for_brand_fit(url: str, text: str) -> Optional[EvaluatedSnippet]:
+    """Return a concise email-friendly summary for a snippet."""
+
+    if not OPENAI_API_KEY:
+        log.error("OpenAI API key is missing. Cannot evaluate snippet.")
+        return None
+
+    system_prompt = (
+        "Summarize the content into a brief, one-sentence headline. "
+        "Start the summary with a relevant emoji. The goal is to provide quick, scannable context. "
+        "Respond in JSON only."
+    )
+
+    try:
+        result = await client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": text}],
+            temperature=0.2,
+            response_model=EvaluatedSnippet,
+            max_retries=2,
+        )
+        result.link = url
+        return result
+    except Exception as exc:  # pragma: no cover - runtime safety
+        log.error("OpenAI API error during snippet summary", error=str(exc))
+    return None
 
 
 async def repair_json_with_llm(text: str) -> Optional[AnalysisResult]:
