@@ -20,3 +20,4 @@ python-json-logger
 googlesearch-python
 pytest
 pytest-asyncio
+pandas
