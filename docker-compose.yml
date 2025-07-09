@@ -3,7 +3,7 @@ version: '3.9'
 services:
   api:
     build: .
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    command: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     ports:
       - "8008:8000"
     volumes:
@@ -16,7 +16,7 @@ services:
 
   worker:
     build: .
-    command: python -m app.worker
+    command: rq worker --url $REDIS_URL high default low
     volumes:
       - .:/app
     env_file:

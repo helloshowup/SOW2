@@ -25,6 +25,8 @@ class Settings(BaseSettings):
     smtp_password: str | None = None
     daily_email_hour: int = 6
     daily_email_minute: int = 0
+    max_daily_searches: int = 90
+    app_base_url: str = "http://localhost:8000"
 
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", extra="ignore"
