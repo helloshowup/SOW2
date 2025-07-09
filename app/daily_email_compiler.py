@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from .config import get_settings
 from .database import get_db
 from .models import EvaluatedSnippet, AgentRun
+from .openai_evaluator import evaluate_snippets_for_brand_fit
 from .email_sender import send_email
 
 log = structlog.get_logger()
@@ -41,11 +42,19 @@ async def compile_and_send_daily_email(db: Session = Depends(get_db)) -> None:
 
     lines = ["Top Brand Health Snippets:"]
     for snip in brand_snippets:
-        lines.append(f"- {snip.title or snip.url}\n  {snip.url}\n  {snip.content_summary}")
+        summary = await evaluate_snippets_for_brand_fit(snip.url, snip.content_summary)
+        if summary:
+            lines.append(f"- {summary.emoji} {summary.headline} {summary.link}")
+        else:
+            lines.append(f"- {snip.title or snip.url} {snip.url}")
 
     lines.append("\nTop Market Intelligence Snippets:")
     for snip in market_snippets:
-        lines.append(f"- {snip.title or snip.url}\n  {snip.url}\n  {snip.content_summary}")
+        summary = await evaluate_snippets_for_brand_fit(snip.url, snip.content_summary)
+        if summary:
+            lines.append(f"- {summary.emoji} {summary.headline} {summary.link}")
+        else:
+            lines.append(f"- {snip.title or snip.url} {snip.url}")
 
     settings = get_settings()
     latest_run = db.query(AgentRun).order_by(AgentRun.completed_at.desc()).first()

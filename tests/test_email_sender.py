@@ -48,8 +48,8 @@ def test_send_summary_email(monkeypatch):
 
     sender.send_summary_email(
         run_id=1,
-        on_brand_specific_links=[{"url": "http://brand.com", "snappy_heading": "Brand"}],
-        brand_relevant_links=[{"url": "http://relevant.com", "snappy_heading": "Relevant"}],
+        on_brand_specific_links=[{"emoji": "\U0001F4A1", "headline": "Brand", "link": "http://brand.com"}],
+        brand_relevant_links=[{"emoji": "\U0001F3C6", "headline": "Relevant", "link": "http://relevant.com"}],
         brand_system_prompt="brand",
         market_system_prompt="market",
         user_prompt="user",
