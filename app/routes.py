@@ -5,7 +5,7 @@ import structlog
 from typing import List, Optional, Literal
 from .database import get_session, get_db
 from .models import AgentRun, Feedback, VisitedUrl, EvaluatedSnippet
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, HTMLResponse
 import pandas as pd
 import io
 import zipfile
@@ -15,6 +15,24 @@ from sqlmodel import select
 router = APIRouter()
 admin_router = APIRouter(prefix="/admin", tags=["Admin"])
 log = structlog.get_logger()
+
+
+@router.get("/", response_class=HTMLResponse, include_in_schema=False)
+async def root():
+    """Provides a simple welcome page with links to the API documentation."""
+    html_content = """
+    <!DOCTYPE html>
+    <html>
+        <head>
+            <title>AI Agent Backend</title>
+        </head>
+        <body>
+            <h1>Welcome to the AI Agent Backend</h1>
+            <p>Access the <a href="/docs">API Documentation</a>.</p>
+        </body>
+    </html>
+    """
+    return html_content
 
 
 class FeedbackPayload(BaseModel):
