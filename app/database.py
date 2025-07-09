@@ -22,6 +22,7 @@ async def init_db() -> None:
     """Create database tables asynchronously."""
     async with engine.begin() as conn:
         await conn.run_sync(SQLModel.metadata.create_all)
+        await conn.run_sync(Base.metadata.create_all)
 
 # --- Synchronous engine and session for non-async tasks ---
 # Some components such as background jobs may use a regular SQLAlchemy session.
