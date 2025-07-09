@@ -94,7 +94,6 @@ async def download_database_csv(session: AsyncSession = Depends(get_session)):
     """
     log.info("Database download requested.")
     
-    # In-memory buffer for the zip file
     zip_buffer = io.BytesIO()
 
     tables = {
@@ -104,34 +103,31 @@ async def download_database_csv(session: AsyncSession = Depends(get_session)):
         "evaluated_snippets": EvaluatedSnippet,
     }
 
-    async with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zipf:
+    # CORRECTED: Use a standard 'with' context manager for zipfile, not 'async with'
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zipf:
         for table_name, model in tables.items():
             try:
-                # Fetch data
                 statement = select(model)
                 results = await session.exec(statement)
                 data = results.all()
 
                 if data:
-                    # Convert to list of dicts
-                    dict_data = [row.model_dump() for row in data]
+                    # CORRECTED: Use .dict() for better compatibility with SQLModel versions
+                    dict_data = [row.dict() for row in data]
                     
-                    # Create DataFrame and CSV
                     df = pd.DataFrame(dict_data)
                     csv_buffer = io.StringIO()
                     df.to_csv(csv_buffer, index=False)
                     csv_buffer.seek(0)
                     
-                    # Add to zip
                     zipf.writestr(f"{table_name}.csv", csv_buffer.getvalue())
                     log.info(f"Added {table_name} to download archive.", record_count=len(data))
                 else:
                     log.info(f"No data in {table_name} to download.")
-                    zipf.writestr(f"{table_name}.csv", "") # Add empty file for completeness
+                    zipf.writestr(f"{table_name}.csv", "")
 
             except Exception as e:
                 log.error(f"Failed to process table {table_name} for download.", error=str(e))
-                # Add an error file to the zip
                 zipf.writestr(f"{table_name}_error.txt", f"Failed to export table: {e}")
 
     zip_buffer.seek(0)
