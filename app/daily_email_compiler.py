@@ -3,8 +3,9 @@ import structlog
 from fastapi import Depends
 from sqlalchemy.orm import Session
 
+from .config import get_settings
 from .database import get_db
-from .models import EvaluatedSnippet
+from .models import EvaluatedSnippet, AgentRun
 from .email_sender import send_email
 
 log = structlog.get_logger()
@@ -45,6 +46,14 @@ async def compile_and_send_daily_email(db: Session = Depends(get_db)) -> None:
     lines.append("\nTop Market Intelligence Snippets:")
     for snip in market_snippets:
         lines.append(f"- {snip.title or snip.url}\n  {snip.url}\n  {snip.content_summary}")
+
+    settings = get_settings()
+    latest_run = db.query(AgentRun).order_by(AgentRun.completed_at.desc()).first()
+    run_id = latest_run.id if latest_run else 0
+    yes_url = f"{settings.app_base_url.rstrip('/')}/feedback?run_id={run_id}&feedback=yes"
+    no_url = f"{settings.app_base_url.rstrip('/')}/feedback?run_id={run_id}&feedback=no"
+    lines.append("")
+    lines.append(f"Was this email helpful? Yes: {yes_url} | No: {no_url}")
 
     body = "\n".join(lines)
     subject = f"Daily Summary {end_time.strftime('%Y-%m-%d')}"

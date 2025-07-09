@@ -5,6 +5,8 @@ import structlog
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
+from .config import get_settings
+
 log = structlog.get_logger()
 
 
@@ -67,13 +69,15 @@ class EmailSender:
             if not links:
                 return "<li>No links found.</li>"
             items = []
+            settings = get_settings()
+            base = settings.app_base_url.rstrip("/")
             for item in links:
                 url = item.get("url")
                 heading = item.get("snappy_heading", url)
                 feedback = (
                     (
-                        f" - <a href='http://localhost:8000/feedback?run_id={run_id}&feedback=yes'>Yes 👍, it was helpful!</a> | "
-                        f"<a href='http://localhost:8000/feedback?run_id={run_id}&feedback=no'>No👎, it was not helpful.</a>"
+                        f" - <a href='{base}/feedback?run_id={run_id}&feedback=yes'>Yes 👍, it was helpful!</a> | "
+                        f"<a href='{base}/feedback?run_id={run_id}&feedback=no'>No👎, it was not helpful.</a>"
                     )
                     if include_feedback
                     else ""

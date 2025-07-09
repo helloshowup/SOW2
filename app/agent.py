@@ -1,5 +1,6 @@
 import asyncio
 import os
+import json
 import random
 from datetime import datetime, date
 from typing import Any, Dict, List, Iterable
@@ -17,6 +18,8 @@ from .openai_evaluator import _construct_prompt_messages
 from . import database
 from .database import get_db
 from .models import AgentRun, VisitedUrl, EvaluatedSnippet
+from .config import get_settings
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 log = structlog.get_logger()
 
@@ -25,11 +28,68 @@ MAX_CONCURRENT_EVALUATIONS = 10
 # limit number of pages processed per batch
 MAX_BATCH_SIZE = 20
 
+# file to persist daily search count
+SEARCH_COUNT_FILE = "search_count.json"
+
 
 def _chunked(seq: List[Dict[str, Any]], size: int) -> Iterable[List[Dict[str, Any]]]:
     """Yield successive ``size``-sized chunks from ``seq``."""
     for i in range(0, len(seq), size):
         yield seq[i : i + size]
+
+
+def _load_daily_search_count() -> int:
+    """Return today's search count stored in SEARCH_COUNT_FILE."""
+    path = os.path.join(os.getcwd(), SEARCH_COUNT_FILE)
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            if data.get("date") == date.today().isoformat():
+                return int(data.get("count", 0))
+    except FileNotFoundError:
+        return 0
+    except Exception as exc:  # pragma: no cover - read failures
+        log.warning("Failed to load search count", error=str(exc))
+    return 0
+
+
+def _save_daily_search_count(count: int) -> None:
+    """Persist today's search count to SEARCH_COUNT_FILE."""
+    path = os.path.join(os.getcwd(), SEARCH_COUNT_FILE)
+    data = {"date": date.today().isoformat(), "count": count}
+    try:
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(data, f)
+    except Exception as exc:  # pragma: no cover - write failures
+        log.warning("Failed to save search count", error=str(exc))
+
+
+async def run_searches(
+    scraper: SimpleScraper, session: AsyncSession, terms: List[str]
+) -> tuple[list[dict], list[str]]:
+    """Run Google searches for the provided terms respecting the daily limit."""
+
+    if not terms:
+        return [], []
+
+    settings = get_settings()
+    current = _load_daily_search_count()
+    remaining = settings.max_daily_searches - current
+    if remaining <= 0:
+        log.warning("Daily search quota exhausted", limit=settings.max_daily_searches)
+        return [], []
+
+    limited_terms = list(terms)[:remaining]
+    if len(limited_terms) < len(terms):
+        log.info(
+            "Truncating search terms due to daily limit",
+            attempted=len(terms),
+            executed=len(limited_terms),
+        )
+
+    pages = await scraper.crawl(session, limited_terms)
+    _save_daily_search_count(current + len(limited_terms))
+    return pages, limited_terms
 
 async def _process_batch(
     pages: List[Dict[str, Any]], brand_config: Dict[str, Any], task_type: str
@@ -192,18 +252,15 @@ async def run_agent_iteration(run_id: int, search_request: dict | None = None) -
                     num_queries=len(brand_queries),
                 )
     
-            search_terms_generated.extend(brand_queries)
-            search_terms_generated.extend(market_queries)
-    
             async def crawl_terms(terms: List[str]) -> List[Dict[str, Any]]:
-                pages: List[Dict[str, Any]] = []
-                if not terms:
-                    return pages
-                search_times.extend([datetime.utcnow().isoformat() for _ in terms])
-                for page in await scraper.crawl(session, terms):
-                    pages.append(page)
+                pages, executed_terms = await run_searches(scraper, session, terms)
+                if executed_terms:
+                    search_terms_generated.extend(executed_terms)
+                    search_times.extend(
+                        [datetime.utcnow().isoformat() for _ in executed_terms]
+                    )
                 return pages
-    
+
             brand_pages = await crawl_terms(brand_queries)
             market_pages = await crawl_terms(market_queries)
     
