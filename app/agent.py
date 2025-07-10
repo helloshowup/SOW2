@@ -28,6 +28,9 @@ MAX_CONCURRENT_EVALUATIONS = 10
 # limit number of pages processed per batch
 MAX_BATCH_SIZE = 20
 
+# minimum relevance required for a snippet to be considered
+MIN_RELEVANCE_SCORE = 60
+
 # file to persist daily search count
 SEARCH_COUNT_FILE = "search_count.json"
 
@@ -346,7 +349,8 @@ async def run_agent_iteration(
                 if 'db' in locals():
                     db.close()
     
-            brand_terms = [brand_config.get("display_name", "").lower()] + [k.lower() for k in keywords]
+            brand_display_name = brand_config.get("display_name", "").lower()
+            brand_terms = [k.lower() for k in keywords]
     
             # limit for number of links to send
             max_email_links = search_request.get("max_email_links", 10) if search_request else 10
@@ -371,14 +375,17 @@ async def run_agent_iteration(
     
             on_brand_specific_items: List[Dict[str, Any]] = []
             brand_relevant_items: List[Dict[str, Any]] = []
-    
+
             for item in evaluated_pages_with_scores:
                 url = item["url"]
                 snippet = item["snippet"].lower()
                 score = item["evaluation"].get("relevance_score", 0)
                 heading = item["evaluation"].get("snappy_heading", "")
-    
-                if any(term in snippet for term in brand_terms):
+
+                if score < MIN_RELEVANCE_SCORE:
+                    continue
+
+                if brand_display_name and brand_display_name in snippet:
                     on_brand_specific_items.append({"url": url, "score": score, "snappy_heading": heading})
                 else:
                     brand_relevant_items.append({"url": url, "score": score, "snappy_heading": heading})
