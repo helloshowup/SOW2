@@ -8,7 +8,13 @@ from sqlalchemy.orm import sessionmaker, Session, declarative_base
 from .config import get_settings
 
 settings = get_settings()
-engine = create_async_engine(settings.DATABASE_URL, echo=True)
+# Render's DATABASE_URL uses the 'postgresql://' scheme, but SQLAlchemy's async engine
+# requires 'postgresql+asyncpg://'. This code block performs the necessary replacement.
+db_url = settings.DATABASE_URL
+if db_url.startswith("postgresql://"):
+    db_url = db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+
+engine = create_async_engine(db_url, echo=True)
 async_session = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
 
 
