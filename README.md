@@ -36,7 +36,17 @@ An automated backend for running AI agents on a schedule. It scrapes the web usi
 
 ## Configuration
 
- All configuration values are read from environment variables. Typical variables include `DATABASE_URL`, `LOG_LEVEL`, `REDIS_URL`, `AGENT_RUN_INTERVAL_MINUTES`, and `OPENAI_API_KEY`. The `AGENT_RUN_INTERVAL_MINUTES` setting is defined in `app/config.py` and controls how often the scheduler triggers the agent. If not set, it defaults to 600 minutes. To customize scraping queries, copy `search_config.json.example` to `search_config.json` and adjust the `brand_health_queries` and `market_intelligence_queries` lists. When present, this file is automatically loaded by the worker to override dynamically generated search terms.
+All configuration values are read from environment variables. Typical variables include `DATABASE_URL`, `LOG_LEVEL`, `REDIS_URL`, `AGENT_RUN_INTERVAL_MINUTES`, and `OPENAI_API_KEY`. The `AGENT_RUN_INTERVAL_MINUTES` setting is defined in `app/config.py` and controls how often the scheduler triggers the agent. If not set, it defaults to 600 minutes. To customize scraping queries, copy `search_config.json.example` to `search_config.json` and adjust the `brand_health_queries` and `market_intelligence_queries` lists. When present, this file is automatically loaded by the worker to override dynamically generated search terms.
+
+When deploying to Render, be sure to provide the following environment variables:
+
+- `DATABASE_URL` - PostgreSQL connection string
+- `REDIS_URL` - Redis connection string
+- `OPENAI_API_KEY` - your OpenAI API key
+- `SERPAPI_API_KEY` - SerpAPI key for Google searches
+- `APP_BASE_URL` - public base URL of the application
+- `EMAIL_SENDER_ADDRESS` - address used in the "from" field of summary emails
+- `EMAIL_RECIPIENTS` - comma-separated list of recipients
 
 ## Architecture
 
