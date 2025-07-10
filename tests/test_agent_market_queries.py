@@ -46,7 +46,7 @@ def test_market_queries_mix(monkeypatch):
 
     monkeypatch.setattr(scraper.SimpleScraper, "crawl", fake_crawl)
 
-    async def fake_eval(snippet, config, task_type):
+    async def fake_eval(snippet, config, task_type, custom_params=None):
         return AnalysisResult(
             summary="ok",
             snappy_heading="H",

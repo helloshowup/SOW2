@@ -3,7 +3,7 @@ import os
 import json
 import random
 from datetime import datetime, date
-from typing import Any, Dict, List, Iterable
+from typing import Any, Dict, List, Iterable, Optional
 from urllib.parse import urlparse
 
 import structlog
@@ -92,7 +92,10 @@ async def run_searches(
     return pages, limited_terms
 
 async def _process_batch(
-    pages: List[Dict[str, Any]], brand_config: Dict[str, Any], task_type: str
+    pages: List[Dict[str, Any]],
+    brand_config: Dict[str, Any],
+    task_type: str,
+    custom_params: Optional[dict] = None,
 ) -> List[Dict[str, Any]]:
     from . import worker  # allows monkeypatching evaluate_content in tests
 
@@ -100,7 +103,9 @@ async def _process_batch(
 
     async def evaluate_with_semaphore(snippet: str):
         async with semaphore:
-            return await worker.evaluate_content(snippet, brand_config, task_type)
+            return await worker.evaluate_content(
+                snippet, brand_config, task_type, custom_params
+            )
 
     tasks = []
     valid_pages = []
@@ -118,8 +123,15 @@ async def _process_batch(
             processed.append(result)
     return processed
 
-async def run_agent_iteration(run_id: int, search_request: dict | None = None) -> None:
+async def run_agent_iteration(
+    run_id: int,
+    search_request: dict | None = None,
+    custom_params: Optional[dict] = None,
+) -> None:
     """Execute one iteration of the agent logic collecting rich metadata."""
+    if custom_params is None:
+        custom_params = {}
+
     async with database.async_session() as session:
         try:
             run = await session.get(AgentRun, run_id)
@@ -288,12 +300,19 @@ async def run_agent_iteration(run_id: int, search_request: dict | None = None) -
             if brand_pages:
                 for chunk in _chunked(brand_pages, MAX_BATCH_SIZE):
                     brand_evals.extend(
-                        await _process_batch(chunk, brand_config, "brand_health")
+                        await _process_batch(
+                            chunk, brand_config, "brand_health", custom_params
+                        )
                     )
             if market_pages:
                 for chunk in _chunked(market_pages, MAX_BATCH_SIZE):
                     market_evals.extend(
-                        await _process_batch(chunk, brand_config, "market_intelligence")
+                        await _process_batch(
+                            chunk,
+                            brand_config,
+                            "market_intelligence",
+                            custom_params,
+                        )
                     )
 
             # Persist evaluated snippets
@@ -381,8 +400,12 @@ async def run_agent_iteration(run_id: int, search_request: dict | None = None) -
                 for item in evaluated_pages_with_scores
             ]
             user_prompt = all_pages[0]["snippet"] if all_pages else ""
-            brand_system_prompt = _construct_prompt_messages("brand_health", brand_config, "")[0]["content"]
-            market_system_prompt = _construct_prompt_messages("market_intelligence", brand_config, "")[0]["content"]
+            brand_system_prompt = custom_params.get("brand_system_prompt") or _construct_prompt_messages(
+                "brand_health", brand_config, ""
+            )[0]["content"]
+            market_system_prompt = custom_params.get("market_system_prompt") or _construct_prompt_messages(
+                "market_intelligence", brand_config, ""
+            )[0]["content"]
     
             # store results
             run = await session.get(AgentRun, run_id)

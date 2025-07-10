@@ -1,7 +1,9 @@
 import logging
 import sys
 
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, BackgroundTasks
+from pydantic import BaseModel, Field
+from typing import Optional
 from redis import Redis
 from rq import Queue
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -16,12 +18,24 @@ from .database import get_session, init_db
 
 from .routes import router as api_router, admin_router
 from .models import AgentRun
+from .agent import run_agent_iteration
 
 settings = get_settings()
 
 redis_conn = Redis.from_url(settings.redis_url)
 task_queue = Queue(connection=redis_conn)
 scheduler = AsyncIOScheduler()
+
+
+class AgentRunParams(BaseModel):
+    """Optional parameters for a manual agent run."""
+
+    brand_system_prompt: Optional[str] = Field(
+        default=None, description="Custom prompt for brand health tasks"
+    )
+    market_system_prompt: Optional[str] = Field(
+        default=None, description="Custom prompt for market intelligence tasks"
+    )
 
 def setup_logging() -> None:
     logging.basicConfig(
@@ -119,7 +133,11 @@ async def health_check():
 
 
 @app.post("/run-agent")
-async def run_agent(session: AsyncSession = Depends(get_session)):
+async def run_agent(
+    background_tasks: BackgroundTasks,
+    params: AgentRunParams = AgentRunParams(),
+    session: AsyncSession = Depends(get_session),
+):
     """Manually trigger an agent run and enqueue worker job."""
     log = structlog.get_logger()
     try:
@@ -128,6 +146,7 @@ async def run_agent(session: AsyncSession = Depends(get_session)):
         await session.commit()
         await session.refresh(new_run)
         task_queue.enqueue("app.worker.run_agent_logic", run_id=new_run.id)
+        background_tasks.add_task(run_agent_iteration, custom_params=params.dict())
         log.info("Agent run enqueued", run_id=new_run.id)
         return {"run_id": new_run.id}
     except Exception as exc:

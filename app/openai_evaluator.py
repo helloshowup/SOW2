@@ -173,6 +173,7 @@ async def evaluate_content(
     text: str,
     brand_config: Dict[str, Any],
     task_type: str = "brand_health",
+    custom_params: Optional[dict] = None,
 ) -> Optional[AnalysisResult]:
     """Evaluate text with OpenAI using brand-specific context.
 
@@ -189,7 +190,21 @@ async def evaluate_content(
         task_type=task_type,
     )
 
+    if custom_params is None:
+        custom_params = {}
+
     messages = _construct_prompt_messages(task_type, brand_config, text)
+
+    prompt_key = (
+        "brand_system_prompt" if task_type == "brand_health" else "market_system_prompt"
+    )
+
+    default_prompt = _construct_prompt_messages(task_type, brand_config, "")[0][
+        "content"
+    ]
+
+    system_prompt = custom_params.get(prompt_key) or default_prompt
+    messages[0]["content"] = system_prompt
 
     try:
         response = await client.chat.completions.create(

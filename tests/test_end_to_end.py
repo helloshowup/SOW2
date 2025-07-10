@@ -46,7 +46,7 @@ def test_end_to_end(monkeypatch):
 
     monkeypatch.setattr(scraper.SimpleScraper, "crawl", fake_crawl)
 
-    async def fake_eval(snippet, config, task_type):
+    async def fake_eval(snippet, config, task_type, custom_params=None):
         return AnalysisResult(
             summary="great",
             snappy_heading="Great",
