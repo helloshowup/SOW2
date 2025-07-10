@@ -21,3 +21,4 @@ googlesearch-python
 pytest
 pytest-asyncio
 pandas
+asyncpg
