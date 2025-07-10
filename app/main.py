@@ -1,7 +1,15 @@
 import logging
 import sys
 
-from fastapi import FastAPI, Depends, HTTPException, BackgroundTasks
+from fastapi import (
+    FastAPI,
+    Depends,
+    HTTPException,
+    BackgroundTasks,
+    Request,
+)
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 from typing import Optional
 from redis import Redis
@@ -53,6 +61,7 @@ def setup_logging() -> None:
     )
 
 app = FastAPI(title="AI Agent Backend")
+templates = Jinja2Templates(directory="templates")
 
 async def trigger_run_agent() -> None:
     """Scheduler job that calls the /run-agent endpoint."""
@@ -122,10 +131,10 @@ app.include_router(api_router)
 app.include_router(admin_router)  # Include the new admin router
 app.include_router(config_router)
 
-# Default root path
-@app.get("/")
-async def read_root():
-    return {"message": "AI Agent Backend"}
+# Default root path serving the configuration form
+@app.get("/", response_class=HTMLResponse)
+async def read_root(request: Request):
+    return templates.TemplateResponse("config.html", {"request": request})
 
 # Health check endpoint
 @app.get("/health", status_code=200)
