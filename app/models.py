@@ -95,3 +95,25 @@ class EvaluatedSnippet(Base):
     timestamp = Column(DateTime, default=datetime.utcnow)
 
 
+class BrandConfigForm(BaseModel):
+    """Schema for submitting or editing brand configuration."""
+
+    display_name: str = PydanticField(
+        description="Human-friendly brand name as shown in the UI"
+    )
+    persona: str = PydanticField(
+        description="Short description of the brand persona"
+    )
+    tone: str = PydanticField(
+        description="Guidelines describing the brand tone or style"
+    )
+    keywords: List[str] = PydanticField(
+        default_factory=list,
+        description="Keywords associated with the brand"
+    )
+    banned_words: List[str] = PydanticField(
+        default_factory=list,
+        description="Words that should be avoided in generated content"
+    )
+
+
