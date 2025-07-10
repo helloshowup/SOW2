@@ -17,6 +17,7 @@ from .config import get_settings
 from .database import get_session, init_db
 
 from .routes import router as api_router, admin_router
+from .config_routes import router as config_router
 from .models import AgentRun
 from .agent import run_agent_iteration
 
@@ -119,6 +120,7 @@ def on_shutdown() -> None:
 
 app.include_router(api_router)
 app.include_router(admin_router)  # Include the new admin router
+app.include_router(config_router)
 
 # Default root path
 @app.get("/")
