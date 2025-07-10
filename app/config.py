@@ -1,5 +1,6 @@
 from functools import lru_cache
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field, field_validator
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -23,8 +24,14 @@ class Settings(BaseSettings):
     smtp_port: int | None = None
     smtp_username: str | None = None
     smtp_password: str | None = None
-    daily_email_hour: int = 6
-    daily_email_minute: int = 0
+    daily_email_hours: list[int] = Field(default_factory=lambda: [8, 16])
+
+    @field_validator("daily_email_hours", mode="before")
+    @classmethod
+    def parse_email_hours(cls, v):  # pragma: no cover - simple parse logic
+        if isinstance(v, str):
+            return [int(h.strip()) for h in v.split(",") if h.strip()]
+        return v
     max_daily_searches: int = 90
     app_base_url: str = "http://localhost:8000"
 

@@ -106,21 +106,22 @@ async def on_startup() -> None:
         replace_existing=True,
         misfire_grace_time=60,
     )
-    scheduler.add_job(
-        trigger_daily_email_job,
-        CronTrigger(
-            hour=settings.daily_email_hour,
-            minute=settings.daily_email_minute,
-        ),
-        id="daily_email_scheduler",
-        replace_existing=True,
-        misfire_grace_time=600,
-    )
+    for i, hour in enumerate(settings.daily_email_hours):
+        scheduler.add_job(
+            trigger_daily_email_job,
+            CronTrigger(
+                hour=hour,
+                minute=0,
+            ),
+            id=f"daily_email_scheduler_{i}",
+            replace_existing=True,
+            misfire_grace_time=600,
+        )
     scheduler.start()
     structlog.get_logger().info(
         "APScheduler started",
         interval=settings.agent_run_interval_minutes,
-        daily_email_time=f"{settings.daily_email_hour:02d}:{settings.daily_email_minute:02d}",
+        daily_email_times=",".join(str(h) for h in settings.daily_email_hours),
     )
 
 @app.on_event("shutdown")
