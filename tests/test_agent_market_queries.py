@@ -37,6 +37,7 @@ worker.async_session = async_session_local
 
 def test_market_queries_mix(monkeypatch):
     monkeypatch.setattr(random, "sample", lambda seq, k: list(seq)[:k])
+    monkeypatch.setattr(random, "choice", lambda seq: seq[0])
 
     captured_terms = []
 
@@ -77,8 +78,12 @@ def test_market_queries_mix(monkeypatch):
 
     asyncio.run(run_agent_iteration(run_id, search_request))
 
-    # only market queries were generated
     assert captured_terms[0] == [
+        "Debonairs Pizza analysis",
+        "Debonairs Pizza analysis",
+    ]
+
+    assert captured_terms[1] == [
         "pizza tech trend",
         "pizza analysis",
         "culture tech trend",

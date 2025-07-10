@@ -6,6 +6,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 from .config import get_settings
+from .brand_parser import load_brand_config
 
 log = structlog.get_logger()
 
@@ -62,6 +63,7 @@ class EmailSender:
         num_search_calls: int | None = None,
         search_times: list[str] | None = None,
         content_summaries: list[str] | None = None,
+        brand_display_name: str | None = None,
     ) -> str:
         """Return HTML body for the summary email using the new template."""
 
@@ -102,6 +104,14 @@ class EmailSender:
             else "<li>N/A</li>"
         )
 
+        if not on_brand_specific_links and not brand_relevant_links:
+            name = brand_display_name or "the brand"
+            return (
+                "<html><body style='font-family: Arial, sans-serif; line-height:1.4;'>"
+                f"<h3>No brand-specific or brand-relevant news was found for {name} today.</h3>"
+                "</body></html>"
+            )
+
         html_sections = [
             "<html>",
             "<body style='font-family: Arial, sans-serif; line-height:1.4;'>",
@@ -138,6 +148,7 @@ class EmailSender:
         num_search_calls: int | None = None,
         search_times: list[str] | None = None,
         content_summaries: list[str] | None = None,
+        brand_display_name: str | None = None,
     ) -> None:
         """Send an email summary using the new template."""
         if not all(
@@ -152,8 +163,19 @@ class EmailSender:
             log.error("Email configuration is incomplete. Skipping email sending.")
             return
 
+        if brand_display_name is None:
+            brand_id = os.getenv("BRAND_ID", "debonairs")
+            config = load_brand_config(brand_id) or {}
+            brand_display_name = config.get("display_name", brand_id)
+
+        no_news = not on_brand_specific_links and not brand_relevant_links
+
         msg = MIMEMultipart("alternative")
-        msg["Subject"] = f"AI Agent Daily Summary - Run {run_id}"
+        msg["Subject"] = (
+            "Daily Summary: No News for Today"
+            if no_news
+            else f"AI Agent Daily Summary - Run {run_id}"
+        )
         msg["From"] = self.sender_email
         msg["To"] = self.receiver_email
 
@@ -168,6 +190,7 @@ class EmailSender:
             num_search_calls=num_search_calls,
             search_times=search_times,
             content_summaries=content_summaries,
+            brand_display_name=brand_display_name,
         )
         msg.attach(MIMEText(html_content, "html"))
 
