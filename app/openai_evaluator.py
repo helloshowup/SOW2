@@ -52,16 +52,27 @@ def alru_cache(maxsize: int = 128):
         cache: "OrderedDict[str, Any]" = OrderedDict()
         lock = asyncio.Lock()
 
-        async def wrapper(text: str, brand_config: Dict[str, Any], task_type: str = "brand_health"):
-            base = {"t": text, "b": brand_config, "tt": task_type, "cid": id(client.chat.completions.create)}
-            key = json.dumps(base, sort_keys=True)
+        async def wrapper(
+            snippet: str,
+            brand_config: Dict[str, Any],
+            task_type: str = "brand_health",
+            custom_params: Optional[dict] = None,
+        ):
+            base = {
+                "t": snippet,
+                "b": brand_config,
+                "tt": task_type,
+                "cp": custom_params,
+                "cid": id(client.chat.completions.create),
+            }
+            key = json.dumps(base, sort_keys=True, default=str)
             async with lock:
                 if key in cache:
                     cache.move_to_end(key)
                     log.info("Cache hit for evaluate_content")
                     return cache[key]
 
-            result = await func(text, brand_config, task_type)
+            result = await func(snippet, brand_config, task_type, custom_params)
 
             async with lock:
                 cache[key] = result
@@ -172,11 +183,11 @@ async def repair_json_with_llm(text: str) -> Optional[AnalysisResult]:
 
 @alru_cache(maxsize=128)
 async def evaluate_content(
-    text: str,
+    snippet: str,
     brand_config: Dict[str, Any],
-    task_type: str = "brand_health",
+    task_type: str,
     custom_params: Optional[dict] = None,
-) -> Optional[AnalysisResult]:
+) -> AnalysisResult | None:
     """Evaluate text with OpenAI using brand-specific context.
 
     The ``task_type`` determines whether the analysis focuses on
@@ -188,14 +199,14 @@ async def evaluate_content(
 
     log.info(
         "Evaluating snippet",
-        snippet_length=len(text),
+        snippet_length=len(snippet),
         task_type=task_type,
     )
 
     if custom_params is None:
         custom_params = {}
 
-    messages = _construct_prompt_messages(task_type, brand_config, text)
+    messages = _construct_prompt_messages(task_type, brand_config, snippet)
 
     prompt_key = (
         "brand_system_prompt" if task_type == "brand_health" else "market_system_prompt"
@@ -219,7 +230,7 @@ async def evaluate_content(
         return response
     except Exception as exc:
         log.error("OpenAI API error during evaluation", error=str(exc))
-        repaired = await repair_json_with_llm(text)
+        repaired = await repair_json_with_llm(snippet)
         if repaired:
             return repaired
     return None
