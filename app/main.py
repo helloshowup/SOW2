@@ -157,7 +157,11 @@ async def run_agent(
         await session.commit()
         await session.refresh(new_run)
         task_queue.enqueue("app.worker.run_agent_logic", run_id=new_run.id)
-        background_tasks.add_task(run_agent_iteration, custom_params=params.dict())
+        background_tasks.add_task(
+            run_agent_iteration,
+            run_id=new_run.id,
+            custom_params=params.dict(),
+        )
         log.info("Agent run enqueued", run_id=new_run.id)
         return {"run_id": new_run.id}
     except Exception as exc:
