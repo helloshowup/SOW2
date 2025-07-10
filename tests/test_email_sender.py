@@ -69,3 +69,24 @@ def test_send_summary_email(monkeypatch):
     assert "Brand System Prompt" in body_raw
     assert "Number of Search Calls" in body_raw
 
+
+def test_send_summary_email_no_news(monkeypatch):
+    dummy = DummySMTP("smtp.example.com", 587)
+    monkeypatch.setattr(smtplib, "SMTP", lambda server, port: dummy)
+
+    sender = EmailSender(
+        smtp_server="smtp.example.com",
+        smtp_port=587,
+        username="user",
+        password="pass",
+        sender_email="sender@example.com",
+        receiver_email="receiver@example.com",
+    )
+
+    sender.send_summary_email(run_id=2, on_brand_specific_links=[], brand_relevant_links=[], brand_display_name="Debonairs Pizza")
+
+    subject = dummy.sent_msg["Subject"]
+    body_raw = dummy.sent_msg.get_payload()[0].get_payload(decode=True).decode()
+    assert "No brand-specific or brand-relevant news was found for Debonairs Pizza today." in body_raw
+    assert subject == "Daily Summary: No News for Today"
+

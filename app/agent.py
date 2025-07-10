@@ -261,11 +261,22 @@ async def run_agent_iteration(
                         generated_fallback_queries.append(f"{kw} {random_phrase}")
                         if len(generated_fallback_queries) >= max_generated_terms:
                             break
-                brand_queries = generated_fallback_queries or ["latest news"]
+                brand_name = brand_config.get("display_name") or brand_id
+                brand_queries = generated_fallback_queries or [brand_name]
                 log.info(
                     "Using generated queries from keywords and rotating phrases as fallback",
                     num_queries=len(brand_queries),
                 )
+
+            # Ensure the brand name appears in at least two search queries
+            brand_name = brand_config.get("display_name") or brand_id
+            if brand_name:
+                brand_lower = brand_name.lower()
+                count = sum(1 for q in brand_queries if brand_lower in q.lower())
+                while count < 2:
+                    phrase = random.choice(rotating_phrases) if rotating_phrases else "news"
+                    brand_queries.append(f"{brand_name} {phrase}")
+                    count += 1
     
             async def crawl_terms(terms: List[str]) -> List[Dict[str, Any]]:
                 pages, executed_terms = await run_searches(scraper, session, terms)
@@ -437,6 +448,7 @@ async def run_agent_iteration(
                 num_search_calls=len(search_terms_generated),
                 search_times=search_times,
                 content_summaries=content_summaries,
+                brand_display_name=brand_config.get("display_name") or brand_id,
             )
     
         except Exception as exc:  # pragma: no cover - runtime safety
