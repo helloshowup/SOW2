@@ -152,18 +152,18 @@ async def run_agent(
     """Manually trigger an agent run and enqueue worker job."""
     log = structlog.get_logger()
     try:
-        new_run = AgentRun(status="queued")
-        session.add(new_run)
+        run = AgentRun(status="queued")
+        session.add(run)
         await session.commit()
-        await session.refresh(new_run)
-        task_queue.enqueue("app.worker.run_agent_logic", run_id=new_run.id)
+        await session.refresh(run)
+        task_queue.enqueue("app.worker.run_agent_logic", run_id=run.id)
         background_tasks.add_task(
             run_agent_iteration,
-            run_id=new_run.id,
+            run_id=run.id,  # pass run_id to background worker
             custom_params=params.dict(),
         )
-        log.info("Agent run enqueued", run_id=new_run.id)
-        return {"run_id": new_run.id}
+        log.info("Agent run enqueued", run_id=run.id)
+        return {"run_id": run.id}
     except Exception as exc:
         log.error("Failed to enqueue agent run", error=str(exc), exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to enqueue agent run")
