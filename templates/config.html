@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Brand Configuration</title>
+</head>
+<body>
+    <h1>Brand Configuration</h1>
+    <form id="configForm" onsubmit="event.preventDefault(); saveConfig();">
+        <div>
+            <label>Display Name
+                <input type="text" id="display_name" name="display_name">
+            </label>
+        </div>
+        <div>
+            <label>Persona
+                <textarea id="persona" name="persona" rows="3"></textarea>
+            </label>
+        </div>
+        <div>
+            <label>Tone
+                <textarea id="tone" name="tone" rows="3"></textarea>
+            </label>
+        </div>
+        <div>
+            <label>Keywords (comma separated)
+                <input type="text" id="keywords" name="keywords">
+            </label>
+        </div>
+        <div>
+            <label>Banned Words (comma separated)
+                <input type="text" id="banned_words" name="banned_words">
+            </label>
+        </div>
+        <button type="submit">Save</button>
+    </form>
+    <div id="message"></div>
+
+<script>
+async function loadConfig() {
+    try {
+        const resp = await fetch('/config');
+        if (resp.ok) {
+            const data = await resp.json();
+            document.getElementById('display_name').value = data.display_name || '';
+            document.getElementById('persona').value = data.persona || '';
+            document.getElementById('tone').value = data.tone || '';
+            document.getElementById('keywords').value = (data.keywords || []).join(', ');
+            document.getElementById('banned_words').value = (data.banned_words || []).join(', ');
+        }
+    } catch (e) {
+        console.error('Failed to load configuration', e);
+    }
+}
+
+async function saveConfig() {
+    const data = {
+        display_name: document.getElementById('display_name').value,
+        persona: document.getElementById('persona').value,
+        tone: document.getElementById('tone').value,
+        keywords: document.getElementById('keywords').value.split(',').map(s => s.trim()).filter(Boolean),
+        banned_words: document.getElementById('banned_words').value.split(',').map(s => s.trim()).filter(Boolean)
+    };
+
+    const resp = await fetch('/config', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    });
+
+    if (resp.ok) {
+        document.getElementById('message').innerText = 'Saved!';
+    } else {
+        document.getElementById('message').innerText = 'Error saving configuration';
+    }
+}
+
+window.addEventListener('DOMContentLoaded', loadConfig);
+</script>
+</body>
+</html>

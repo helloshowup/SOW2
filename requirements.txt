@@ -109,6 +109,7 @@ jinja2==3.1.6
     #   instructor
     #   mkdocs
     #   mkdocs-material
+    # required for fastapi.templating.Jinja2Templates
 jiter==0.10.0
     # via
     #   instructor
