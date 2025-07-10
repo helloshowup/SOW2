@@ -99,7 +99,9 @@ def _construct_prompt_messages(
         f"You are an expert marketing assistant and conter writer analyzing text for {brand_config.get('display_name', '')}. "
         f"Use a {persona} {style} tone. {focus_line} "
         f"Keywords to monitor: {all_keywords}. Avoid these banned words: {banned_words}. "
-        "Respond in JSON only. Also generate a 'snappy_heading' field: a short, engaging title for the content, that tells a story and is not a heading."
+        "Respond in JSON only. Also generate a 'snappy_heading' field: a short, factual title for the content. "
+        "The title should be based directly on the text and not be overly creative or sensationalized. "
+        "If the provided text is not relevant to the brand or its industry, you must state that it is irrelevant in the summary and assign a relevance_score of 0."
     )
 
     examples_key = (
