@@ -13,6 +13,10 @@ from .scraper import (
     load_brand_keywords,
     load_search_config,
 )
+from .prompts import get_summarize_prompt
+from .llm import get_completion
+from .search import search_google, SearchResult
+from .storage import get_search_results_for_today, save_search_results, StoredResult
 from .brand_parser import load_brand_config
 from .openai_evaluator import _construct_prompt_messages
 from . import database
@@ -459,3 +463,21 @@ async def run_agent_iteration(
                 run.error_message = str(exc)
                 session.add(run)
                 await session.commit()
+
+
+def run_agent() -> None:
+    """Fetch new search results and persist them for later summarization."""
+    results = [SearchResult(snippet=r.snippet, url=r.url) for r in search_google()]
+    save_search_results([StoredResult(snippet=r.snippet, url=r.url) for r in results])
+
+
+def get_daily_summary() -> str:
+    """Return a formatted summary of today's search results."""
+    results = get_search_results_for_today()
+    if not results:
+        return ""
+    search_results_and_links = "\n".join(
+        f"- {r.snippet} ({r.url})" for r in results
+    )
+    prompt = get_summarize_prompt(search_results_and_links)
+    return get_completion(prompt)
