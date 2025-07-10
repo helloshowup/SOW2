@@ -22,7 +22,6 @@ __pycache__
 .env*
 
 # Development and testing
-dev-research/
 tests/
 smoke_test.sh
 README.md
